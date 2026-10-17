@@ -1,6 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{};
-const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop},confirm:()=>true,setTimeout:noop});
+const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop},confirm:()=>true,setTimeout:noop});
+vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();login();',''),context);
 const api=vm.runInContext('({makeQuestion,expected,correct,buildAssessment,typePlan,controls,describe,answerState,tableMarkup,render,result,readAnswer,refreshCurrentScreen,names,lifeScenes,wordScenes,GardenQuestions})',context);
@@ -38,7 +39,7 @@ for(const dan of ['all','2','3','4','5','6','7','8','9'])for(let t=0;t<19;t++)fo
 }
 for(const dan of ['all','2','5','7','9'])for(const n of [10,20,30]){
  const qs=api.buildAssessment(dan,n,'mix');assert.equal(qs.length,n);if(n>=20)assert.equal(new Set(qs.map(q=>q.t)).size,19);
- const written=qs.filter(q=>q.writing).length;assert.equal(written,n===10?2:n===20?4:6);
+ const written=qs.filter(q=>q.writing).length;assert.equal(written,n===10?1:2);
  for(const q of qs){assert(api.correct(q,api.expected(q)));context.qs=[q];context.answers=[api.expected(q)];context.pos=0;const markup=api.controls(q);assert(!markup.includes('undefined'));assert(!api.describe(q,api.expected(q)).includes('undefined'));}
 }
 for(const dan of ['all','2','7'])for(let t=0;t<19;t++){
@@ -69,7 +70,7 @@ entries=[{dataset:{answerIndex:'0'},value:'15'}];nodes.get('#explanation')??node
 reviewButtons=[{dataset:{review:'essay',value:'yes'}},{dataset:{review:'essay',value:'no'}}];nodes.get('#form').onsubmit({preventDefault:noop});
 assert.equal(vm.runInContext('screen',context),'result');assert.equal(vm.runInContext('history.length',context),1);assert(vm.runInContext('app.innerHTML',context).includes('&lt;img src=x onerror=alert(1)&gt;'));
 reviewButtons[0].onclick();assert.equal(vm.runInContext('history.length',context),2);assert.equal(vm.runInContext('history[1].score',context),100);api.refreshCurrentScreen();assert.equal(vm.runInContext('history.length',context),2);
-console.log(JSON.stringify({checked,conditions,conditionBankChecks,correctChoiceCounts:[...counts].sort(),comparisonOperators:[...relations],conditionTargetCount:targets.size,zeroCases:[...zeroCases],history:'preserved; idempotent; retry excluded',mixed:'10/20/30 balanced; 20/30 cover all 19',controller:'table order, submit, pending rubric, score persistence, escaping, refresh passed',result:'passed'}));
+console.log(JSON.stringify({checked,conditions,conditionBankChecks,correctChoiceCounts:[...counts].sort(),comparisonOperators:[...relations],conditionTargetCount:targets.size,zeroCases:[...zeroCases],history:'preserved; idempotent; retry excluded',mixed:'10/20/30 with 1/2/2 written; 20/30 cover all 19',controller:'table order, submit, pending rubric, score persistence, escaping, refresh passed',result:'passed'}));
 
 // Particles follow the last spoken number, not the computed product.
 for(let n=0;n<=81;n++){
@@ -95,7 +96,7 @@ for(const pin of ['','619','0000','06190']){
 api.refreshCurrentScreen();assert.equal(vm.runInContext('screen',context),'login');
 api.render();assert.equal(vm.runInContext('screen',context),'login');
 nodes.get('#garden-password').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
-assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'home');
+assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'hub');
 assert.equal(vm.runInContext('history.length',context),2);
 console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');
 
@@ -110,3 +111,27 @@ for(let a=2;a<=9;a++)for(let b=2;b<=9;b++)for(let variant=0;variant<3;variant++)
  if(b===2&&a!==2)assert.equal(q.wrongEquation,`${a} × 2 = ${a} + 2 = ${a+2}`);
 }
 console.log('v1.5.1: all 192 error variants have distinct steps, incorrect starting equality and correct arithmetic; explanations verified');
+
+// Review groups are disjoint, preserve original numbers, and move reviewed writing correctly.
+const numeric=api.makeQuestion(15,'5',null,{a:5,b:2});numeric.id='numeric';assert(!numeric.writing);
+const essay=api.makeQuestion(16,'3',null,{a:3,b:5});essay.id='essay';
+const success=api.makeQuestion(10,'2',null,{a:2,b:5});success.id='success';
+context.fixtures=[numeric,essay,success];context.fixtureAnswers=[['0'],api.expected(essay),api.expected(success)];
+vm.runInContext("qs=fixtures;answers=fixtureAnswers;manualChecks={};reviewMode=false;runId='group-test';",context);
+api.result();let markup=vm.runInContext('app.innerHTML',context);
+for(const id of ['numeric','essay','success'])assert.equal(markup.split('id="review-'+id+'"').length-1,1);
+assert(markup.indexOf('서술형 확인하기')<markup.indexOf('틀린 문제 다시 보기'));
+assert(markup.includes('<details class="panel review-correct">'));
+assert(markup.includes('2번 '+api.names[16]));
+vm.runInContext("manualChecks.essay=false",context);api.result();markup=vm.runInContext('app.innerHTML',context);
+assert(!markup.includes('review-writing'));assert.equal(markup.split('id="review-essay"').length-1,1);
+assert(markup.includes('틀린 문제 다시 보기 · 2문제'));
+vm.runInContext("authenticated=false",context);vm.runInContext('openDictation()',context);assert.equal(vm.runInContext('screen',context),'login');
+vm.runInContext("authenticated=true;openDictation()",context);assert.equal(vm.runInContext('gardenAccess()',context),true);assert(vm.runInContext('app.innerHTML',context).includes('dictation/index.html?v=1.6.0'));
+vm.runInContext('hub()',context);assert.equal(vm.runInContext('gardenAccess()',context),false);
+const sampleBackup={app:'liah-learning-garden',format:1,data:{'garden-history':[{score:80,date:'old'}],'dictation-items':{'1':Array(10).fill('함께 배워요.')}}};
+context.backupText=JSON.stringify(sampleBackup);assert.equal(vm.runInContext('Object.keys(validStudyBackup(backupText)).length',context),2);
+for(const bad of [{app:'wrong',format:1,data:{}},{app:'liah-learning-garden',format:1,data:{'garden-history':[{score:101,date:'x'}]}},{app:'liah-learning-garden',format:1,data:{'dictation-items':{'11':Array(10).fill('가')}}}]){
+ context.backupText=JSON.stringify(bad);assert.throws(()=>vm.runInContext('validStudyBackup(backupText)',context));
+}
+console.log('v1.6.0: hub admission, dictation access gate, disjoint result groups, original numbering, reduced writing and backup validation passed');
