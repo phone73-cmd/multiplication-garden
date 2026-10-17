@@ -98,3 +98,15 @@ nodes.get('#garden-password').value='0619';nodes.get('#login-form').onsubmit({pr
 assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'home');
 assert.equal(vm.runInContext('history.length',context),2);
 console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');
+
+// Every error item has a genuinely wrong first equality and valid intermediate arithmetic.
+for(let a=2;a<=9;a++)for(let b=2;b<=9;b++)for(let variant=0;variant<3;variant++){
+ const q=api.makeQuestion(15,'all',null,{a,b,variant}),parts=q.wrongEquation.split(' = ');
+ assert(parts.every((p,i)=>!i||p!==parts[i-1]),q.wrongEquation);
+ const sum=parts[1].split(' + ').reduce((s,n)=>s+Number(n),0);
+ assert.notEqual(sum,a*b,q.wrongEquation);
+ if(parts.length===3)assert.equal(sum,Number(parts[2]));
+ assert(q.hint.includes(Array(b).fill(a).join(' + ')));
+ if(b===2&&a!==2)assert.equal(q.wrongEquation,`${a} × 2 = ${a} + 2 = ${a+2}`);
+}
+console.log('v1.5.1: all 192 error variants have distinct steps, incorrect starting equality and correct arithmetic; explanations verified');
