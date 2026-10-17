@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v1.6.1 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.6.2 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -78,15 +78,32 @@ function validStudyBackup(text){
 }
 async function exportStudy(){
   const notice=document.querySelector('#backup-notice');
+  let text;
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    const text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.1',data},null,2);
-    const file=new File([text],'learning-garden-v1.6.1-backup.json',{type:'application/json'});
-    if(navigator.canShare?.({files:[file]})&&navigator.share){await navigator.share({files:[file],title:'배움정원 학습 백업'});notice.textContent='공유창에서 파일 저장을 선택해 주세요.';}
-    else{const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);notice.textContent='백업 파일 다운로드를 요청했어요.';}
-  }catch(e){notice.textContent=e.name==='AbortError'?'내보내기를 취소했어요.':'백업 파일을 만들지 못했어요.';}
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.2',data},null,2);
+  }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
+  const filename='learning-garden-v1.6.2-backup.json';
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  // File sharing is optional: lack of support or a denied share must not block export.
+  if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
+    try{
+      const file=new File([text],filename,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'배움정원 학습 백업'});
+        notice.textContent='공유창으로 내보냈어요. 파일에 저장을 선택했다면 파일 앱에서 확인해 주세요.';return;
+      }
+    }catch(e){if(e.name==='AbortError'){notice.textContent='내보내기를 취소했어요.';return;}}
+  }
+  try{
+    const blob=new Blob([text],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    notice.textContent='백업 파일 다운로드를 요청했어요. 다운로드 목록에서 확인해 주세요.';
+  }catch(e){notice.textContent=`파일 저장을 요청하지 못했어요. Safari나 Chrome에서 다시 시도해 주세요. (${e.name||'저장 오류'})`;}
 }
+
 function applyStudyBackup(data){
   const before={};for(const key of Object.keys(data))before[key]=localStorage.getItem(key);
   try{for(const [key,value]of Object.entries(data))localStorage.setItem(key,JSON.stringify(value));}
