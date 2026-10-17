@@ -1,18 +1,19 @@
-/* 지안이의 배움정원 v1.6.0 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.6.1 — shared entrance and separate learning modules. */
+let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
+  const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name==='login';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
 }
 function readStudyValue(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
-function stopDictation(){try{document.querySelector('#dictation-frame')?.contentWindow?.speechSynthesis?.cancel();}catch{}}
+function stopDictation(){if(dictationController){dictationController.destroy();dictationController=null;}}
 function returnToHub(){
   if(!authenticated)return login();
   if(screen==='quiz'&&!confirm('배움정원 홈으로 갈까요? 풀고 있는 답은 저장되지 않아요.'))return;
   if(screen==='result'&&qs.some((q,i)=>answerState(q,answers[i])==='pending')&&!confirm('아직 확인하지 않은 설명이 있어요. 배움정원 홈으로 갈까요?'))return;
   if(screen==='dictation'){
-    const child=document.querySelector('#dictation-frame')?.contentWindow;
-    if(child?.dictationHasDraft?.()&&!confirm('배움정원 홈으로 갈까요? 작성 중인 답과 저장하지 않은 문장은 사라져요.'))return;
+    if(dictationController?.hasDraft()&&!confirm('배움정원 홈으로 갈까요? 작성 중인 답과 저장하지 않은 문장은 사라져요.'))return;
     stopDictation();
   }
   hub();window.scrollTo(0,0);
@@ -32,7 +33,9 @@ function hub(){
 function openDictation(){
   if(!authenticated)return login();
   screen='dictation';setStudyScreen(screen);
-  app.innerHTML='<section class="dictation-shell" aria-label="받아쓰기 공책"><iframe id="dictation-frame" title="받아쓰기 공책 학습 화면" src="dictation/index.html?v=1.6.0"></iframe></section>';
+  stopDictation();
+  app.innerHTML='<section id="dictation-native" aria-label="받아쓰기 공책"></section>';
+  dictationController=window.GardenDictation.mount(document.querySelector('#dictation-native'));
   window.scrollTo(0,0);
 }
 function reviewCard(q,i,state){
@@ -45,14 +48,16 @@ function reviewGroups(states){
   const cards=list=>list.map(x=>reviewCard(x.q,x.i,x.state)).join('');
   return `${pending.length||written.length?`<section class="panel review-writing"><h2>서술형 확인하기 · ${pending.length}개 남았어요</h2>${cards(pending)}${written.length?`<details><summary>확인한 서술형 ${written.length}문제</summary>${cards(written)}</details>`:''}</section>`:''}${wrong.length?`<section class="panel review-wrong"><h2>틀린 문제 다시 보기 · ${wrong.length}문제</h2>${cards(wrong)}</section>`:''}${good.length?`<details class="panel review-correct"><summary>맞힌 문제 ${good.length}개 보기</summary>${cards(good)}</details>`:''}`;
 }
-const studyBackupKeys=['garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
+const studyBackupKeys=['garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
 function validStudyBackup(text){
   const obj=JSON.parse(text);
   if(!obj||obj.app!=='liah-learning-garden'||obj.format!==1||!obj.data||typeof obj.data!=='object'||Array.isArray(obj.data))throw Error('배움정원에서 내보낸 파일을 골라 주세요.');
   const data={};
   for(const [key,value]of Object.entries(obj.data)){
     if(!studyBackupKeys.includes(key))throw Error('알 수 없는 저장 항목이 있어요.');
-    if(key==='garden-history'){
+    if(key==='garden-appearance'){
+      if(!value||!['system','light','dark'].includes(value.theme)||!['pink','sky','mint','lavender','peach','lemon'].includes(value.palette))throw Error('화면 설정이 올바르지 않아요.');
+    }else if(key==='garden-history'){
       if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')))throw Error('수학 기록을 확인해 주세요.');
     }else{
       if(!value||typeof value!=='object'||Array.isArray(value))throw Error('받아쓰기 데이터를 확인해 주세요.');
@@ -76,8 +81,8 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    const text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.0',data},null,2);
-    const file=new File([text],'learning-garden-v1.6.0-backup.json',{type:'application/json'});
+    const text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.1',data},null,2);
+    const file=new File([text],'learning-garden-v1.6.1-backup.json',{type:'application/json'});
     if(navigator.canShare?.({files:[file]})&&navigator.share){await navigator.share({files:[file],title:'배움정원 학습 백업'});notice.textContent='공유창에서 파일 저장을 선택해 주세요.';}
     else{const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);notice.textContent='백업 파일 다운로드를 요청했어요.';}
   }catch(e){notice.textContent=e.name==='AbortError'?'내보내기를 취소했어요.':'백업 파일을 만들지 못했어요.';}
@@ -87,6 +92,7 @@ function applyStudyBackup(data){
   try{for(const [key,value]of Object.entries(data))localStorage.setItem(key,JSON.stringify(value));}
   catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch{}}throw e;}
   if(data['garden-history'])history=data['garden-history'];
+  window.GardenAppearance?.reload();
 }
 async function importStudyFile(event){
   const file=event.target.files[0];event.target.value='';if(!file)return;

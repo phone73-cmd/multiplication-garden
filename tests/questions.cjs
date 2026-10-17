@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{};
-const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop},confirm:()=>true,setTimeout:noop});
+const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();login();',''),context);
@@ -127,7 +127,7 @@ vm.runInContext("manualChecks.essay=false",context);api.result();markup=vm.runIn
 assert(!markup.includes('review-writing'));assert.equal(markup.split('id="review-essay"').length-1,1);
 assert(markup.includes('틀린 문제 다시 보기 · 2문제'));
 vm.runInContext("authenticated=false",context);vm.runInContext('openDictation()',context);assert.equal(vm.runInContext('screen',context),'login');
-vm.runInContext("authenticated=true;openDictation()",context);assert.equal(vm.runInContext('gardenAccess()',context),true);assert(vm.runInContext('app.innerHTML',context).includes('dictation/index.html?v=1.6.0'));
+vm.runInContext("authenticated=true;openDictation()",context);assert.equal(vm.runInContext('gardenAccess()',context),true);assert(vm.runInContext('app.innerHTML',context).includes('dictation-native'));
 vm.runInContext('hub()',context);assert.equal(vm.runInContext('gardenAccess()',context),false);
 const sampleBackup={app:'liah-learning-garden',format:1,data:{'garden-history':[{score:80,date:'old'}],'dictation-items':{'1':Array(10).fill('함께 배워요.')}}};
 context.backupText=JSON.stringify(sampleBackup);assert.equal(vm.runInContext('Object.keys(validStudyBackup(backupText)).length',context),2);
