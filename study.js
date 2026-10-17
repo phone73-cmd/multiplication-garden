@@ -1,9 +1,9 @@
-/* 지안이의 배움정원 v1.6.2 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.6.3 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
-  const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name==='login';
+  const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
 }
 function readStudyValue(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
@@ -82,9 +82,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.2',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.6.3',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.6.2-backup.json';
+  const filename='learning-garden-v1.6.3-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
