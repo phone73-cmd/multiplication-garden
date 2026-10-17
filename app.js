@@ -3,9 +3,9 @@ const names=["그림 보고 덧셈식·곱셈식 완성하기", "곱셈식의 �
 const typeOrder=[0,8,1,2,3,4,5,6,7,9,10,11,12,13,14,18,15,16,17];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));const shuffle=a=>a.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);
-let qs=[],answers=[],pos=0,reviewMode=false,history=[],screen='home',scoreSavedForRun=false,manualChecks={},runId='';
+let qs=[],answers=[],pos=0,reviewMode=false,history=[],screen='login',authenticated=false,scoreSavedForRun=false,manualChecks={},runId='';
 try{const saved=JSON.parse(localStorage.getItem('garden-history')||'[]');if(Array.isArray(saved))history=saved.filter(h=>h&&Number.isFinite(h.score));}catch{}
-function home(){screen='home';app.innerHTML=`<div class="hero"><div><span class="eyebrow">오늘도 한 뼘 자라는 수학</span><h1>생각하는 곱셈,<br>자신감이 활짝!</h1><p>그림부터 설명까지 19가지 유형을 연습해요.<br>틀려도 괜찮아요. 다시 풀며 함께 배워요.</p></div><div class="garden" aria-hidden="true"><div class="flower">🌷🌼🌷</div><small>보고 · 생각하고 · 풀어 봐요</small></div></div><section class="panel"><div class="topline"><h2>나만의 단원평가</h2><span class="muted">시간 제한 없음</span></div><div class="settings"><label>연습할 단<select id="dan"><option value="all">2~9단 골고루</option>${Array.from({length:8},(_,i)=>`<option>${i+2}</option>`).join('')}</select></label><label>문제 수<select id="count"><option>10</option><option>20</option><option>30</option></select></label><label>문제 유형<select id="type"><option value="mix">19가지 골고루</option>${typeOrder.map((t,i)=>`<option value="${t}">${i+1}. ${names[t]}</option>`).join('')}</select></label><button id="start">평가 시작하기 →</button></div><p class="muted">생활 속 곱셈은 20가지 소재의 그림 문제예요. 생활 속 곱셈·20문제를 고르면 모든 소재를 한 번씩 풀어요. 20·30문제에서는 19가지 유형을 모두 연습해요. 10문제에서는 기본·응용·설명 문제를 골고루 풀어요. ‘조건에 맞는 수’와 ‘같은 곱 연결하기’에는 다른 단도 함께 나올 수 있어요. 설명 문제는 함께 확인한 뒤 기록돼요.</p></section><div class="stats"><div class="stat"><span class="muted">완료한 평가</span><strong>${history.length}회</strong></div><div class="stat"><span class="muted">최고 점수</span><strong>${history.length?Math.max(...history.map(h=>h.score)):0}점</strong></div><div class="stat"><span class="muted">최근 평가</span><strong>${history.length?history.at(-1).score+'점':'첫 도전'}</strong></div></div><p class="muted">기본·응용·설명 문제를 함께 연습해요. 설명은 결과 화면에서 보호자와 확인해요. 학습 기록은 지금 사용하는 브라우저에 저장돼요.</p>`;document.querySelector('#start').onclick=start}
+function home(){if(!authenticated)return login();screen='home';app.innerHTML=`<div class="hero"><div><span class="eyebrow">오늘도 한 뼘 자라는 수학</span><h1>생각하는 곱셈,<br>자신감이 활짝!</h1><p>그림부터 설명까지 19가지 유형을 연습해요.<br>틀려도 괜찮아요. 다시 풀며 함께 배워요.</p></div><div class="garden" aria-hidden="true"><div class="flower">🌷🌼🌷</div><small>보고 · 생각하고 · 풀어 봐요</small></div></div><section class="panel"><div class="topline"><h2>나만의 단원평가</h2><span class="muted">시간 제한 없음</span></div><div class="settings"><label>연습할 단<select id="dan"><option value="all">2~9단 골고루</option>${Array.from({length:8},(_,i)=>`<option>${i+2}</option>`).join('')}</select></label><label>문제 수<select id="count"><option>10</option><option>20</option><option>30</option></select></label><label>문제 유형<select id="type"><option value="mix">19가지 골고루</option>${typeOrder.map((t,i)=>`<option value="${t}">${i+1}. ${names[t]}</option>`).join('')}</select></label><button id="start">평가 시작하기 →</button></div><p class="muted">생활 속 곱셈은 20가지 소재의 그림 문제예요. 생활 속 곱셈·20문제를 고르면 모든 소재를 한 번씩 풀어요. 20·30문제에서는 19가지 유형을 모두 연습해요. 10문제에서는 기본·응용·설명 문제를 골고루 풀어요. ‘조건에 맞는 수’와 ‘같은 곱 연결하기’에는 다른 단도 함께 나올 수 있어요. 설명 문제는 함께 확인한 뒤 기록돼요.</p></section><div class="stats"><div class="stat"><span class="muted">완료한 평가</span><strong>${history.length}회</strong></div><div class="stat"><span class="muted">최고 점수</span><strong>${history.length?Math.max(...history.map(h=>h.score)):0}점</strong></div><div class="stat"><span class="muted">최근 평가</span><strong>${history.length?history.at(-1).score+'점':'첫 도전'}</strong></div></div><p class="muted">기본·응용·설명 문제를 함께 연습해요. 설명은 결과 화면에서 보호자와 확인해요. 학습 기록은 지금 사용하는 브라우저에 저장돼요.</p>`;document.querySelector('#start').onclick=start}
 const field=(label,value)=>({label,value});
 const lifeScenes=[
 ['달팽이','🐌','cm','움직인'],['토끼','🐇','m','뛰어간'],['자동차','🚗','m','이동한'],['개구리','🐸','cm','뛰어간'],['메뚜기','🦗','cm','뛰어간'],['거북이','🐢','cm','걸어간'],['강아지','🐕','m','걸어간'],['고양이','🐈','m','걸어간'],['다람쥐','🐿️','m','뛰어간'],['말','🐎','m','달려간'],['캥거루','🦘','m','뛰어간'],['병아리','🐥','cm','걸어간'],['오리','🦆','m','걸어간'],['펭귄','🐧','m','걸어간'],['로봇','🤖','cm','이동한'],['장난감 자동차','🏎️','cm','이동한'],['기차','🚂','m','이동한'],['버스','🚌','m','이동한'],['자전거','🚲','m','이동한'],['공','⚽','cm','굴러간']
@@ -54,7 +54,26 @@ function correct(q,ans){
   if(q.kind==='grid'||q.kind==='multi'||q.kind==='single')return values.length===ex.length&&[...values].sort().join(',')===[...ex].sort().join(',');
   return values.length===ex.length&&ex.every((v,i)=>/^\d+$/.test(String(values[i]))&&+values[i]===+v);
 }
-function subjectJosa(n){return [0,1,3,6,7,8].includes(n%10)?'은':'는';}
+// Sino-Korean number reading; an expression follows its last spoken number.
+function finalSound(value){
+  const text=String(value).trim(),digit=text.match(/(\d)$/);
+  if(digit){const n=Number(digit[1]);return n===1||n===7||n===8?'rieul':[0,3,6].includes(n)?'closed':'open';}
+  const code=text.charCodeAt(text.length-1)-0xac00;
+  if(code>=0&&code<=11171){const final=code%28;return final===8?'rieul':final?'closed':'open';}
+  return 'open';
+}
+function josa(value,pair){const sound=finalSound(value),closed=sound!=='open';return ({'은/는':closed?'은':'는','을/를':closed?'을':'를','이/가':closed?'이':'가','와/과':closed?'과':'와','으로/로':closed&&sound!=='rieul'?'으로':'로'})[pair];}
+function subjectJosa(n){return josa(n,'은/는');}
+function login(){
+  screen='login';
+  app.innerHTML=`<section class="login-garden" aria-labelledby="login-title"><div class="login-sky" aria-hidden="true"><span class="garden-sun">☀</span><span class="garden-cloud cloud-one"></span><span class="garden-cloud cloud-two"></span><span class="garden-butterfly">🦋</span><div class="garden-hill"></div><div class="login-blooms">${['#f2aabc','#f7d881','#bfafe3','#f1b2c5','#f8d77b','#bcb4e4','#f1a6bc'].map((color,i)=>`<div class="bloom" style="--petal:${color};--height:${[106,135,99,151,116,139,102][i]}px;--tilt:${[-12,8,-7,5,-5,11,-8][i]}deg"><span class="bloom-stem"></span><span class="bloom-leaf"></span><span class="bloom-head">${'<i></i>'.repeat(5)}<b></b></span></div>`).join('')}</div></div><div class="login-content"><span class="login-kicker">작은 생각이 활짝 피어나는 곳</span><h1 id="login-title">지안이의<br><span>곱셈정원</span></h1><p>오늘도 함께 곱셈 꽃을 피워 볼까요?</p><form id="login-form"><label for="garden-password">정원 비밀번호<input id="garden-password" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="네 자리 비밀번호" required aria-describedby="login-notice"></label><p id="login-notice" role="alert" aria-live="polite"></p><button type="submit">정원에 들어가기 <span aria-hidden="true">🌷</span></button></form></div></section>`;
+  document.querySelector('#login-form').onsubmit=e=>{
+    e.preventDefault();const input=document.querySelector('#garden-password');
+    if(input.value!=='0619'){document.querySelector('#login-notice').textContent='비밀번호를 다시 확인해 주세요.';input.value='';input.focus();return;}
+    authenticated=true;input.value='';home();window.scrollTo(0,0);
+  };
+}
+
 function differenceSentence(q,v){return `${q.a} × ${q.small} = ${v[0]}입니다. ${q.a} × ${q.b}${subjectJosa(q.b)} ${q.a} × ${q.small}보다 ${q.a}씩 ${v[1]}묶음이 더 많으므로 ${v[2]}만큼 더 큽니다.`;}
 function methodMarkup(q,v){return `<div class="method-block"><h3>방법 ①</h3><div>${q.a} × ${q.b}${subjectJosa(q.b)} ${q.a}씩 ${v[0]}번 더해서 계산할 수 있어.</div><div class="method-equation">${q.a} × ${q.b} = ${Array(q.b).fill(q.a).join(' + ')} = ${v[1]}</div></div><div class="method-block"><h3>방법 ②</h3><div>${q.a} × ${q.prev}의 값에 ${v[2]}만큼 더하는 방법도 있어.</div><div class="method-step"><div class="method-equations"><div>${q.a} × ${q.prev} = ${q.a*q.prev}</div><div>${q.a} × ${q.b} = ${v[3]}</div></div><div class="method-arrow"><svg viewBox="0 0 54 108" aria-hidden="true"><path d="M 5 9 C 61 9 61 93 7 93 M 17 82 L 5 93 L 19 101" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="arrow-plus">+ ${v[4]}</span></div></div></div>`;}
 function tableMarkup(q,values){return `<div class="table-scroll"><table class="multiplication-table"><caption>왼쪽 수 × 위쪽 수</caption><thead><tr><th scope="col">×</th>${q.table.cols.map(n=>`<th scope="col">${n}</th>`).join('')}</tr></thead><tbody>${q.table.rows.map((r,ri)=>`<tr><th scope="row">${r}</th>${q.table.cols.map((c,ci)=>{const i=q.table.blanks.findIndex(p=>p.ri===ri&&p.ci===ci);return `<td>${i<0?r*c:values[i]}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;}
@@ -71,7 +90,7 @@ function controls(q){
   if(q.t===12)return tableMarkup(q,v);
   if(q.kind==='multi'||q.kind==='single')return `<div class="choices explanation-choices">${q.options.map((o,i)=>`<label><input class="choice" type="${q.kind==='single'?'radio':'checkbox'}" name="choice" value="${i}" ${ans.includes(String(i))?'checked':''}><span>${q.kind==='single'?'':choiceSymbol(i)+' '}${esc(o.text)}</span></label>`).join('')}</div>`;
   if(q.kind==='grid')return `<p style="text-align:center" class="muted">숫자를 다시 누르면 선택을 취소해요.</p><div class="number-grid">${q.nums.map(n=>`<button type="button" class="cell" data-value="${n}" aria-pressed="${ans.includes(String(n))}">${n}</button>`).join('')}</div>`;
-  if(q.kind==='match')return `<div class="matching">${q.pairs.map((p,i)=>`<label><span class="match-left">${p.left}</span><svg class="match-arrow" viewBox="0 0 90 40" aria-hidden="true"><path d="M8 20 C 27 5 45 35 76 20 M 63 9 L 78 20 L 63 31" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><select class="entry" data-answer-index="${i}" aria-label="${p.left}과 같은 곱"><option value="">짝 선택</option>${q.right.map((r,j)=>`<option value="${j}" ${ans[i]===String(j)?'selected':''}>${r}</option>`).join('')}</select></label>`).join('')}</div>`;
+  if(q.kind==='match')return `<div class="matching">${q.pairs.map((p,i)=>`<label><span class="match-left">${p.left}</span><svg class="match-arrow" viewBox="0 0 90 40" aria-hidden="true"><path d="M8 20 C 27 5 45 35 76 20 M 63 9 L 78 20 L 63 31" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><select class="entry" data-answer-index="${i}" aria-label="${p.left}${josa(p.left,'와/과')} 같은 곱"><option value="">짝 선택</option>${q.right.map((r,j)=>`<option value="${j}" ${ans[i]===String(j)?'selected':''}>${r}</option>`).join('')}</select></label>`).join('')}</div>`;
   return `<div class="fields">${q.fields.map((f,i)=>`<label>${esc(f.label)}${v[i]}</label>`).join('')}</div>`;
 }
 function choiceSymbol(i){return ['㉠','㉡','㉢','㉣','㉤','㉥','㉦','㉧','㉨','㉩','㉪','㉫'][i]||String(i+1);}
@@ -106,10 +125,12 @@ function buildAssessment(dan,n,t){
   });
 }
 function start(){
+  if(!authenticated)return login();
   const dan=document.querySelector('#dan').value,n=+document.querySelector('#count').value,t=document.querySelector('#type').value;
   qs=buildAssessment(dan,n,t);answers=qs.map(()=>[]);pos=0;reviewMode=false;manualChecks={};runId=`${Date.now()}-${Math.random().toString(36).slice(2)}`;scoreSavedForRun=false;render();window.scrollTo(0,0);
 }
 function render(){
+  if(!authenticated)return login();
   screen='quiz';const q=qs[pos];
   app.innerHTML=`<div class="topline"><span class="eyebrow">${reviewMode?'오답 다시 풀기':'곱셈 단원평가'}</span><button id="exit" class="ghost">처음으로</button></div><section class="panel"><div class="topline"><strong>${pos+1} / ${qs.length} 문제</strong><span class="muted">${names[q.t]}</span></div><div class="track"><div style="width:${(pos+1)/qs.length*100}%"></div></div><div class="question">${esc(q.text)}</div>${q.scopeNote?`<p class="scope-note">${esc(q.scopeNote)}</p>`:''}${q.visual}<form id="form">${controls(q)}${q.writing?writingControl(q):''}<div id="notice" role="alert"></div><div class="actions">${pos?'<button type="button" class="ghost" id="prev">← 이전 문제</button>':''}<button type="submit">${pos===qs.length-1?'채점하기 ✓':'다음 문제 →'}</button></div></form></section><p class="muted" style="text-align:center">${q.writing?'설명은 결과 화면에서 함께 읽고 확인해요.':'빈칸과 선택을 모두 맞히면 정답이에요.'}</p>`;
   document.querySelector('#exit').onclick=()=>{if(confirm('처음으로 돌아갈까요? 풀고 있는 답은 저장되지 않아요.'))home();};
@@ -145,6 +166,7 @@ function saveRun(score){
   scoreSavedForRun=true;try{localStorage.setItem('garden-history',JSON.stringify(history));}catch{}
 }
 function result(){
+  if(!authenticated)return login();
   screen='result';const states=qs.map((q,i)=>answerState(q,answers[i])),pending=states.filter(x=>x==='pending').length,good=states.filter(x=>x==='good').length,wrong=qs.filter((q,i)=>states[i]==='wrong'),score=Math.round(good/qs.length*100);
   if(!pending)saveRun(score);
   app.innerHTML=`<section class="panel" style="text-align:center"><span class="eyebrow">${reviewMode?'오답 연습 확인':'오늘의 정원이 자랐어요'}</span><h1>${pending?'설명을 함께 확인해요 🌿':score===100?'모두 맞혔어요! 🌼':'끝까지 해냈어요! 🌱'}</h1><div class="score">${pending?'—':score}${pending?'':'<span style="font-size:24px">점</span>'}</div><p>${pending?`설명 ${pending}문항을 확인하면 점수가 완성돼요.<br>아래 기준을 보며 보호자와 함께 읽어 보세요.`:`${qs.length}문제 중 ${good}문제를 맞혔어요.`}</p><div class="actions">${wrong.length&&!pending?'<button id="retry">틀린 문제 다시 풀기</button>':''}<button id="home" class="ghost">새 평가 만들기</button></div></section><section class="panel"><h2>함께 확인해요</h2>${qs.map((q,i)=>{
@@ -157,6 +179,7 @@ function result(){
 }
 function refreshCurrentScreen(){
   const y=window.scrollY;
+  if(!authenticated){login();window.scrollTo(0,y);return;}
   if(screen==='quiz'&&qs.length){answers[pos]=readAnswer();render();}
   else if(screen==='result')result();
   else{const prefs={dan:document.querySelector('#dan')?.value,count:document.querySelector('#count')?.value,type:document.querySelector('#type')?.value};home();for(const [id,value] of Object.entries(prefs))if(value!==undefined)document.querySelector(`#${id}`).value=value;}
@@ -165,4 +188,4 @@ function refreshCurrentScreen(){
 
 function installPullToRefresh(){const indicator=document.createElement('div'),fill=document.createElement('div');indicator.setAttribute('aria-hidden','true');Object.assign(indicator.style,{position:'fixed',zIndex:'1000',top:'max(10px, env(safe-area-inset-top))',left:'50%',width:'96px',height:'7px',transform:'translate(-50%,-180%)',opacity:'0',borderRadius:'999px',background:'#e9f0e5',boxShadow:'0 2px 10px #355b4318',overflow:'hidden',transition:'transform .22s ease, opacity .22s ease',pointerEvents:'none'});Object.assign(fill.style,{display:'block',width:'0%',height:'100%',borderRadius:'inherit',background:'linear-gradient(90deg,#b9d8a9,#8ec5a5)',transition:'width .18s ease-out'});indicator.appendChild(fill);document.body.appendChild(indicator);let startY=null,distance=0;const hide=()=>{indicator.style.transform='translate(-50%,-180%)';indicator.style.opacity='0'};window.addEventListener('touchstart',e=>{if(e.touches.length!==1||window.scrollY>0){startY=null;return}startY=e.touches[0].clientY;distance=0;fill.style.width='0%'},{passive:true});window.addEventListener('touchmove',e=>{if(startY===null||e.touches.length!==1)return;if(window.scrollY>0){startY=null;hide();return}const delta=e.touches[0].clientY-startY;if(delta<=0)return;if(e.cancelable)e.preventDefault();distance=Math.min(88,delta*.55);fill.style.width=`${Math.round(distance/88*100)}%`;indicator.style.transform=`translate(-50%,${Math.min(42,distance/2)}px)`;indicator.style.opacity='1'},{passive:false});window.addEventListener('touchend',()=>{if(startY===null)return;const shouldRefresh=distance>=58;startY=null;distance=0;if(!shouldRefresh){hide();return}fill.style.width='100%';refreshCurrentScreen();indicator.style.transform='translate(-50%,18px)';indicator.style.opacity='1';setTimeout(()=>{hide();setTimeout(()=>fill.style.width='0%',240)},520)});window.addEventListener('touchcancel',()=>{startY=null;distance=0;hide()})}
 
-installPullToRefresh();home();
+installPullToRefresh();login();

@@ -1,4 +1,4 @@
-/* 곱셈 정원 v1.4.0: bounded question generators and explicit answer contracts. */
+/* 곱셈 정원 v1.5.0: bounded question generators and explicit answer contracts. */
 var GardenQuestions = (() => {
   const conditionCache = new Map();
   const tableValues = n => Array.from({length:9},(_,i)=>n*(i+1));
@@ -78,7 +78,7 @@ var GardenQuestions = (() => {
         {text:`${a} × ${b-1}의 값에 ${a}만큼 더해서 구합니다.`,value:a*(b-1)+a},
         {text:`${a-1} × ${b}의 값에 ${b}만큼 더해서 구합니다.`,value:(a-1)*b+b},
         {text:`${b} × ${a}의 곱으로 구합니다.`,value:a*b},
-        {text:`${a}와 ${b}를 더해서 구합니다.`,value:a+b},
+        {text:`${a}${josa(a,'와/과')} ${b}${josa(b,'을/를')} 더해서 구합니다.`,value:a+b},
         {text:`${a}씩 ${b-1}번 더해서 구합니다.`,value:a*(b-1)},
         {text:`${a} × ${b}의 값에 1만큼 더해서 구합니다.`,value:a*b+1},
         {text:`${a} × ${b}의 값에서 ${a}만큼 빼서 구합니다.`,value:a*b-a},
@@ -160,11 +160,11 @@ var GardenQuestions = (() => {
     if(t===15){
       q.text='잘못된 계산을 바르게 고치고, 이유를 설명해 보세요.';
       const sum=a+b;q.errorType=q.variant===0&&sum!==a*b?'add':'groups';q.wrongEquation=q.errorType==='add'?`${a} × ${b} = ${a} + ${b} = ${sum}`:`${a} × ${b} = ${Array(b-1).fill(a).join(' + ')} = ${a*(b-1)}`;
-      q.visual=`<div class="error-equation">${esc(q.wrongEquation)}</div>`;q.fields=[field('바르게 구한 곱',a*b)];q.hint=`${a} × ${b}는 ${a}씩 ${b}번 더하는 뜻입니다. 곱은 ${a*b}입니다.`;
+      q.visual=`<div class="error-equation">${esc(q.wrongEquation)}</div>`;q.fields=[field('바르게 구한 곱',a*b)];q.hint=`${a} × ${b}${subjectJosa(b)} ${a}씩 ${b}번 더하는 뜻입니다. 곱은 ${a*b}입니다.`;
       writing(q,`${a}씩 ${b}번 더해야 하므로 ${a*b}입니다.`,[`${a}씩 ${b}묶음 또는 ${a}씩 ${b}번 더하는 뜻을 설명했나요?`,'어떤 부분이 잘못되었는지 설명했나요?']);
     }
     if(t===16){
-      q.text=`${a} × ${b-1} = ${a*(b-1)}을 이용하여 ${a} × ${b}를 구하는 방법을 설명하세요.`;q.fields=[field('곱',a*b)];
+      q.text=`${a} × ${b-1} = ${a*(b-1)}${josa(a*(b-1),'을/를')} 이용하여 ${a} × ${b}${josa(b,'을/를')} 구하는 방법을 설명하세요.`;q.fields=[field('곱',a*b)];
       q.hint=`${a} × ${b} = ${a*b}입니다. 계산 방법은 말이나 식으로 설명할 수 있습니다.`;
       writing(q,`${a}씩 한 묶음 더 많으므로 ${a*(b-1)}에 ${a}만큼 더해 ${a*b}입니다.`,[`${a}씩 한 묶음이 더 있다는 관계를 설명했나요?`,`${a*(b-1)}에서 ${a}만큼 더하는 계산이 맞나요?`]);
     }

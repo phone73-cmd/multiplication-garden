@@ -2,8 +2,9 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{};
 const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop},confirm:()=>true,setTimeout:noop});
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
-vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();home();',''),context);
+vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();login();',''),context);
 const api=vm.runInContext('({makeQuestion,expected,correct,buildAssessment,typePlan,controls,describe,answerState,tableMarkup,render,result,readAnswer,refreshCurrentScreen,names,lifeScenes,wordScenes,GardenQuestions})',context);
+vm.runInContext('authenticated=true',context);
 const testCompare=(n,op,v)=>op==='<'?n<v:op==='<='?n<=v:op==='>'?n>v:n>=v;
 let checked=0,conditions=0;const counts=new Set(),relations=new Set(),targets=new Set(),zeroCases=new Set();
 for(const dan of ['all','2','3','4','5','6','7','8','9'])for(let t=0;t<19;t++)for(let i=0;i<100;i++){
@@ -69,3 +70,31 @@ reviewButtons=[{dataset:{review:'essay',value:'yes'}},{dataset:{review:'essay',v
 assert.equal(vm.runInContext('screen',context),'result');assert.equal(vm.runInContext('history.length',context),1);assert(vm.runInContext('app.innerHTML',context).includes('&lt;img src=x onerror=alert(1)&gt;'));
 reviewButtons[0].onclick();assert.equal(vm.runInContext('history.length',context),2);assert.equal(vm.runInContext('history[1].score',context),100);api.refreshCurrentScreen();assert.equal(vm.runInContext('history.length',context),2);
 console.log(JSON.stringify({checked,conditions,conditionBankChecks,correctChoiceCounts:[...counts].sort(),comparisonOperators:[...relations],conditionTargetCount:targets.size,zeroCases:[...zeroCases],history:'preserved; idempotent; retry excluded',mixed:'10/20/30 balanced; 20/30 cover all 19',controller:'table order, submit, pending rubric, score persistence, escaping, refresh passed',result:'passed'}));
+
+// Particles follow the last spoken number, not the computed product.
+for(let n=0;n<=81;n++){
+ const closed=[0,1,3,6,7,8].includes(n%10),rieul=[1,7,8].includes(n%10);
+ context.n=n;
+ for(const [pair,want] of [['은/는',closed?'은':'는'],['을/를',closed?'을':'를'],['이/가',closed?'이':'가'],['와/과',closed?'과':'와'],['으로/로',closed&&!rieul?'으로':'로']]){context.pair=pair;assert.equal(vm.runInContext('josa(n,pair)',context),want);}
+}
+assert.equal(vm.runInContext("josa('3 × 2','와/과')",context),'와');
+assert.equal(vm.runInContext("josa('연필','으로/로')",context),'로');
+assert.equal(vm.runInContext("josa('꽃','이/가')",context),'이');
+assert.equal(vm.runInContext("josa('사과','을/를')",context),'를');
+// Wrong PIN and omitted leading zero stay locked; exact four digits unlock.
+vm.runInContext('authenticated=false;home()',context);
+assert.equal(vm.runInContext('screen',context),'login');
+assert(vm.runInContext('app.innerHTML',context).includes('지안이의'));
+context.document.querySelector('#garden-password');
+for(const pin of ['','619','0000','06190']){
+ nodes.get('#garden-password').value=pin;nodes.get('#garden-password').focus=noop;
+ nodes.get('#login-form').onsubmit({preventDefault:noop});
+ assert.equal(vm.runInContext('authenticated',context),false);
+ assert.equal(vm.runInContext('screen',context),'login');
+}
+api.refreshCurrentScreen();assert.equal(vm.runInContext('screen',context),'login');
+api.render();assert.equal(vm.runInContext('screen',context),'login');
+nodes.get('#garden-password').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
+assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'home');
+assert.equal(vm.runInContext('history.length',context),2);
+console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');
