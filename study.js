@@ -1,8 +1,9 @@
-/* 지안이의 배움정원 v1.8.8 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.9 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
+  if(name!=='hub')hubExpressions=null;
   const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
   const logout=document.querySelector('#logout-button');if(logout)logout.hidden=name!=='hub';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
@@ -29,12 +30,39 @@ function logoutGarden(){
   qs=[];answers=[];manualChecks={};pos=0;
   login();window.scrollTo(0,0);
 }
+// Each subject uses its own completed learning records. Old math summaries have no dan data.
+let hubExpressions=null;
+function validDanStats(value){
+  return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([dan,r])=>/^[2-9]$/.test(dan)&&r&&Number.isSafeInteger(r.attempts)&&r.attempts>0&&Number.isSafeInteger(r.wrong)&&r.wrong>=0&&r.wrong<=r.attempts);
+}
+function hubDanTotals(subject){
+  const totals={};
+  const add=(a,r)=>{if(!totals[a])totals[a]={attempts:0,wrong:0};totals[a].attempts+=r.attempts;totals[a].wrong+=r.wrong;};
+  if(subject==='times'){
+    const facts=readStudyValue('garden-times-facts',{});
+    if(facts&&typeof facts==='object')for(const [key,r]of Object.entries(facts))if(/^[2-9]x[1-9]$/.test(key)&&r&&Number.isSafeInteger(r.attempts)&&r.attempts>0&&Number.isSafeInteger(r.wrong)&&r.wrong>=0&&r.wrong<=r.attempts)add(Number(key[0]),r);
+  }else for(const record of history)if(validDanStats(record.danStats))for(const [dan,r]of Object.entries(record.danStats))add(Number(dan),r);
+  return totals;
+}
+function chooseHubExpression(totals,exclude){
+  const recorded=Object.entries(totals).filter(([,r])=>r.attempts>0);
+  const highest=recorded.length?Math.max(...recorded.map(([,r])=>r.wrong/r.attempts)):null;
+  const dans=recorded.length?recorded.filter(([,r])=>Math.abs(r.wrong/r.attempts-highest)<1e-12).map(([d])=>Number(d)):[2,3,4,5,6,7,8,9];
+  const dan=dans[Math.floor(Math.random()*dans.length)];
+  const multipliers=Array.from({length:9},(_,i)=>i+1).filter(b=>!exclude||!(dan===exclude.a&&b===exclude.b||dan===exclude.b&&b===exclude.a));
+  return {a:dan,b:multipliers[Math.floor(Math.random()*multipliers.length)]};
+}
+function getHubExpressions(){
+  if(!hubExpressions){const times=chooseHubExpression(hubDanTotals('times'));hubExpressions={times,math:chooseHubExpression(hubDanTotals('math'),times)};}
+  return hubExpressions;
+}
 function hub(){
   if(!authenticated)return login();
   stopDictation();screen='hub';setStudyScreen(screen);
   const stats=readStudyValue('dictation-stats',{}),rows=stats&&typeof stats==='object'?Object.values(stats):[];
+  const expressions=getHubExpressions();
   const runs=rows.reduce((sum,r)=>sum+(Number.isFinite(r?.runs)?r.runs:0),0);
-  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span>3 × 4</span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span>2 × 3</span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
+  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><div class="welcome-heading"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1></div><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span>${expressions.times.a} × ${expressions.times.b}</span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span>${expressions.math.a} × ${expressions.math.b}</span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
   window.GardenMood?.bindWelcome(app);
   document.querySelector('#open-math').onclick=()=>{home();window.scrollTo(0,0);};
   document.querySelector('#open-times').onclick=()=>TimesGarden.open();
@@ -78,7 +106,7 @@ function validStudyBackup(text){
       const moodKeys=['greeting','eye-smile','excited','surprised','thinking','sad','determined','sleepy'];
       if(!value||typeof value!=='object'||Array.isArray(value)||![...moodKeys,'random'].includes(value.choice)||!moodKeys.includes(value.current))throw Error('기분 선택을 확인해 주세요.');
     }else if(key==='garden-history'){
-      if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')))throw Error('수학 기록을 확인해 주세요.');
+      if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')||(h.danStats!==undefined&&!validDanStats(h.danStats))))throw Error('수학 기록을 확인해 주세요.');
     }else{
       if(!value||typeof value!=='object'||Array.isArray(value))throw Error('받아쓰기 데이터를 확인해 주세요.');
       if(key==='dictation-settings'){
@@ -102,9 +130,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.8',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.9',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.8-backup.json';
+  const filename='learning-garden-v1.8.9-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -129,6 +157,7 @@ function applyStudyBackup(data){
   try{for(const [key,value]of Object.entries(data))localStorage.setItem(key,JSON.stringify(value));}
   catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch{}}throw e;}
   if(data['garden-history'])history=data['garden-history'];
+  hubExpressions=null;
   window.GardenAppearance?.reload();window.GardenMood?.reload();
 }
 async function importStudyFile(event){

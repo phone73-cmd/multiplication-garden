@@ -164,7 +164,9 @@ function describe(q,ans){
 function answerState(q,ans){if(q.writing&&manualChecks[q.id]===undefined)return 'pending';if(!correct(q,ans))return 'wrong';return q.writing&&manualChecks[q.id]===false?'wrong':'good';}
 function saveRun(score){
   if(reviewMode)return;
-  const existing=history.findIndex(h=>h.id===runId),record={id:runId,score,date:existing>=0?history[existing].date:new Date().toISOString()};
+  const danStats={};
+  qs.forEach((q,i)=>{if(!Number.isInteger(q.a)||q.a<2||q.a>9||q.t===6)return;const r=danStats[q.a]||(danStats[q.a]={attempts:0,wrong:0});r.attempts++;if(answerState(q,answers[i])!=='good')r.wrong++;});
+  const existing=history.findIndex(h=>h.id===runId),record={id:runId,score,date:existing>=0?history[existing].date:new Date().toISOString(),danStats};
   if(existing>=0)history[existing]=record;else history.push(record);
   scoreSavedForRun=true;try{localStorage.setItem('garden-history',JSON.stringify(history));}catch{}
 }

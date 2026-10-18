@@ -39,12 +39,12 @@ assert(f.buttons().every(b=>!b.disabled));assert.equal(f.get('#garden-enter').di
 f.get('#garden-code').value='0000';f.get('#login-form').onsubmit({preventDefault(){}});
 assert.equal(randomCalls,1);assert.equal(vm.runInContext('authenticated',f.ctx),false);
 f.get('#garden-code').value='0619';f.get('#login-form').onsubmit({preventDefault(){}});
-assert.equal(randomCalls,1);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
+const afterAdmission=randomCalls;assert.equal(afterAdmission,5);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
 assert.equal(f.welcome().src,'assets/moods/determined.webp');assert(!f.app.innerHTML.includes('class="study-sprouts"'));
 assert(f.app.innerHTML.includes('하나씩 해보자. 넌 할 수 있어!'));
-vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,1);assert.equal(mood.current().key,'determined');
+vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,afterAdmission);assert.equal(mood.current().key,'determined');
 const reboot=make();assert.equal(reboot.api.get().choice,'random');assert.equal(reboot.api.current().key,'determined');
-vm.runInContext('hub()',reboot.ctx);assert.equal(reboot.welcome().src,'assets/moods/determined.webp');assert.equal(randomCalls,1);
+vm.runInContext('hub()',reboot.ctx);assert.equal(reboot.welcome().src,'assets/moods/determined.webp');assert.equal(randomCalls,afterAdmission+4);
 // Refreshing the login view cancels the old draw without writing a pending winner.
 vm.runInContext('authenticated=false;login()',f.ctx);const before=mood.get();
 f.buttons().find(b=>b.dataset.mood==='random').onclick();assert(mood.drawing());f.tick(300);
