@@ -42,3 +42,7 @@ assert(!engine.validFacts({'9x10':facts['7x8']}));assert(!engine.validFacts({'7x
 ctx.factBackup={app:'liah-learning-garden',format:1,data:{'garden-times-facts':facts}};
 assert.equal(vm.runInContext('validStudyBackup(JSON.stringify(factBackup))["garden-times-facts"]["7x8"].wrong',ctx),2);
 console.log('Cumulative mistakes: attempts, mastery, returning errors, dan filter, unique queues and backup passed.');
+
+garden.mode='mixed';garden.home();get('#times-none').onclick();assert.equal(garden.dans.length,0);assert(vm.runInContext('app.innerHTML',ctx).includes('id="times-start" disabled'));
+get('#times-all').onclick();assert.equal(garden.dans.length,8);assert(!vm.runInContext('app.innerHTML',ctx).includes('id="times-start" disabled'));
+console.log('Select none/all: cleared dans disable start; select all restores eight dans and start.');

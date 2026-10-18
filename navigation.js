@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.2: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.3: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
   const browser=window.history;
   if(!browser?.pushState||!window.addEventListener)return {sync(){}};
@@ -8,7 +8,7 @@ window.GardenNav=(()=>{
     'dictation-home':1,'dictation-quiz':2,'dictation-done':2,'dictation-settings':2
   };
   const marker='learning-garden-navigation-v1';
-  let current=null,pending=null,handling=false;
+  let current=null,pending=null,handling=false,leaveBox=null,leaveTarget=null,pausedAdvance=false,returnFocus=null;
   const entry=route=>({garden:marker,route,depth:routes[route]});
   const valid=s=>s?.garden===marker&&Object.hasOwn(routes,s.route)&&s.depth===routes[s.route];
   const replace=route=>{current=entry(route);browser.replaceState(current,'');};
@@ -32,13 +32,42 @@ window.GardenNav=(()=>{
     }
     current=target;browser.pushState(current,'');
   }
-  function mayLeave(target){
-    if(typeof authenticated==='undefined'||!authenticated)return true;
-    if(screen==='quiz'&&target!=='math-quiz')return confirm('풀고 있는 문제에서 나갈까요? 작성 중인 답은 저장되지 않아요.');
-    if(screen==='result'&&target!=='math-result'&&qs.some((q,i)=>answerState(q,answers[i])==='pending'))return confirm('아직 확인하지 않은 설명이 있어요. 이전 화면으로 갈까요?');
-    if(screen==='times'&&TimesGarden.active()&&target!=='times-quiz')return confirm('풀고 있는 연습에서 나갈까요? 작성 중인 답은 저장되지 않아요.');
-    if(screen==='dictation'&&target!==current.route&&dictationController?.hasDraft())return confirm('받아쓰기에서 나갈까요? 작성 중인 답과 저장하지 않은 문장은 사라져요.');
-    return true;
+  function leaveMessage(target){
+    if(typeof authenticated==='undefined'||!authenticated)return '';
+    if(screen==='quiz'&&target!=='math-quiz')return '문제를 그만 풀고 돌아갈까요? 지금 쓰는 답은 저장되지 않아요.';
+    if(screen==='result'&&target!=='math-result'&&qs.some((q,i)=>answerState(q,answers[i])==='pending'))return '아직 확인하지 않은 설명이 있어요. 이전 화면으로 갈까요?';
+    if(screen==='times'&&TimesGarden.active()&&target!=='times-quiz')return '연습을 그만하고 돌아갈까요? 지금 쓰는 답은 저장되지 않아요.';
+    if(screen==='dictation'&&target!==current.route&&dictationController?.hasDraft())return '받아쓰기에서 나갈까요? 지금 쓰는 답과 저장하지 않은 문장은 사라져요.';
+    return '';
+  }
+  function showLeave(message,target){
+    if(leaveTarget!==null)return;
+    if(!leaveBox){
+      leaveBox=document.createElement('dialog');leaveBox.id='garden-leave-dialog';
+      leaveBox.setAttribute('aria-labelledby','garden-leave-title');
+      leaveBox.setAttribute('aria-describedby','garden-leave-message');
+      leaveBox.innerHTML='<h2 id="garden-leave-title">잠깐만요 🌿</h2><p id="garden-leave-message"></p><div class="actions"><button type="button" class="ghost" id="garden-stay">계속 풀기</button><button type="button" id="garden-leave">나가기</button></div>';
+      document.body.appendChild(leaveBox);
+      leaveBox.querySelector('#garden-stay').onclick=()=>closeLeave(false);
+      leaveBox.querySelector('#garden-leave').onclick=()=>closeLeave(true);
+      leaveBox.oncancel=event=>{event.preventDefault();closeLeave(false);};
+      leaveBox.onclose=()=>{if(leaveTarget!==null)closeLeave(false);};
+    }
+    leaveTarget=target;returnFocus=document.activeElement;
+    pausedAdvance=screen==='times'&&!!TimesGarden.nextTimer;
+    if(pausedAdvance){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
+    leaveBox.querySelector('#garden-leave-message').textContent=message;
+    leaveBox.showModal();leaveBox.querySelector('#garden-stay').focus();
+  }
+  function closeLeave(exit){
+    if(leaveTarget===null)return;
+    const target=leaveTarget,resume=pausedAdvance;leaveTarget=null;pausedAdvance=false;
+    leaveBox.close();
+    if(exit){renderRoute(target);window.scrollTo(0,0);}
+    else{
+      if(resume&&screen==='times'&&TimesGarden.active()&&TimesGarden.done)TimesGarden.scheduleAdvance();
+      if(returnFocus?.isConnected)returnFocus.focus();
+    }
   }
   function renderRoute(route){
     if(!authenticated){login();return;}
@@ -69,8 +98,10 @@ window.GardenNav=(()=>{
     if(!valid(event.state))return;
     const old=current,next=event.state;
     if(!old){replace(next.route);return;}
-    if(!mayLeave(next.route)){
-      pending={route:old.route};browser.go(old.depth-next.depth);return;
+    const message=leaveMessage(next.route);
+    if(message){
+      // Restore the active app entry before waiting for an explicit in-app choice.
+      current=next;sync(old.route);showLeave(message,next.route);return;
     }
     current=next;handling=true;
     try{renderRoute(next.route);window.scrollTo(0,0);}finally{handling=false;}

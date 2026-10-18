@@ -1,5 +1,5 @@
-/* 지안이의 배움정원 v1.8.2: only this app's assets and cache names. */
-const CACHE_NAME='learning-garden-v1.8.2';
+/* 지안이의 배움정원 v1.8.3: only this app's assets and cache names. */
+const CACHE_NAME='learning-garden-v1.8.3';
 const ASSETS=['./','./index.html','./app.js','./study.js','./times.js','./navigation.js','./appearance.js','./questions.js','./manifest.webmanifest','./dictation/index.html','./dictation/dictation.js','./icon-192.png','./icon-512.png','./icon.svg','./apple-touch-icon.png'];
 const assetURLs=new Set(ASSETS.map(path=>new URL(path,self.registration.scope).href));
 self.addEventListener('install',event=>{
