@@ -1,7 +1,6 @@
-/* 배움정원 v1.8.18: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.19: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
-  const browser=window.history;
-  if(!browser?.pushState||!window.addEventListener)return {sync(){}};
+  const browser=window.history,historyEnabled=!!(browser?.pushState&&window.addEventListener);
   const routes={
     login:0,hub:0,appearance:1,'math-home':1,'math-quiz':2,'math-result':2,
     'times-home':1,'times-learn':2,'times-quiz':2,'times-result':2,
@@ -14,6 +13,7 @@ window.GardenNav=(()=>{
   const replace=route=>{current=entry(route);browser.replaceState(current,'');};
   function sync(route){
     if(!Object.hasOwn(routes,route))return;
+    if(!historyEnabled){current=entry(route);return;}
     if(handling){replace(route);return;}
     if(pending){pending.queued=route;return;}
     if(!current){
@@ -76,7 +76,7 @@ window.GardenNav=(()=>{
     if(screen==='times'&&TimesGarden.nextTimer){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
     const dialog=document.querySelector('#appearance-dialog');if(route!=='appearance'&&dialog?.open)dialog.close();
     if(route==='appearance'){window.GardenAppearance.open();return;}
-    if(route==='hub'||route==='login'){hub();return;}
+    if(route==='hub'||route==='login'){stopDictation();hub();return;}
     if(route==='math-home'){stopDictation();home();return;}
     if(route==='math-quiz'||route==='math-result'){
       stopDictation();if(!qs.length){home();return;}
@@ -95,7 +95,7 @@ window.GardenNav=(()=>{
       if(!dictationController?.navigate?.(name))dictationController?.goHome();
     }
   }
-  window.addEventListener('popstate',event=>{
+  window.addEventListener?.('popstate',event=>{
     if(pending){const {route,queued}=pending;pending=null;replace(route);if(queued&&queued!==route)sync(queued);return;}
     if(!valid(event.state))return;
     const old=current,next=event.state;
@@ -110,6 +110,7 @@ window.GardenNav=(()=>{
   });
   function request(route){
     if(!Object.hasOwn(routes,route))return false;
+    if(route===current?.route)return true;
     const message=leaveMessage(route);
     if(message)showLeave(message,route);else renderRoute(route);
     return true;

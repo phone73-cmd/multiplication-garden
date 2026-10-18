@@ -136,7 +136,7 @@ function render(){
   if(!authenticated)return login();
   screen='quiz';setStudyScreen(screen);const q=qs[pos];
   app.innerHTML=`<div class="topline"><span class="eyebrow">${reviewMode?'오답 다시 풀기':'곱셈 단원평가'}</span><button id="exit" class="ghost">처음으로</button></div><section class="panel"><div class="topline"><strong>${pos+1} / ${qs.length} 문제</strong><span class="muted">${names[q.t]}</span></div><div class="track"><div style="width:${(pos+1)/qs.length*100}%"></div></div><div class="question">${esc(q.text)}</div>${q.scopeNote?`<p class="scope-note">${esc(q.scopeNote)}</p>`:''}${q.visual}<form id="form">${controls(q)}${q.writing?writingControl(q):''}<div id="notice" role="alert"></div><div class="actions">${pos?'<button type="button" class="ghost" id="prev">← 이전 문제</button>':''}<button type="submit">${pos===qs.length-1?'채점하기 ✓':'다음 문제 →'}</button></div></form></section><p class="muted" style="text-align:center">${q.writing?'설명은 결과 화면에서 함께 읽고 확인해요.':'빈칸과 선택을 모두 맞히면 정답이에요.'}</p>`;
-  document.querySelector('#exit').onclick=()=>{if(confirm('처음으로 돌아갈까요? 풀고 있는 답은 저장되지 않아요.'))home();};
+  document.querySelector('#exit').onclick=()=>requestStudyRoute('math-home',home);
   document.querySelectorAll('.cell').forEach(e=>e.onclick=()=>e.setAttribute('aria-pressed',e.getAttribute('aria-pressed')!=='true'));
   if(pos)document.querySelector('#prev').onclick=()=>{answers[pos]=readAnswer();pos--;render();window.scrollTo(0,0);};
   document.querySelector('#form').onsubmit=e=>{
@@ -175,7 +175,7 @@ function result(){
   screen='result';setStudyScreen(screen);const states=qs.map((q,i)=>answerState(q,answers[i])),pending=states.filter(x=>x==='pending').length,good=states.filter(x=>x==='good').length,wrong=qs.filter((q,i)=>states[i]==='wrong'),score=Math.round(good/qs.length*100);
   if(!pending)saveRun(score);
   app.innerHTML=`<section class="panel" style="text-align:center"><span class="eyebrow">${reviewMode?'오답 연습 확인':'오늘의 정원이 자랐어요'}</span><h1>${pending?'설명을 함께 확인해요 🌿':score===100?'모두 맞혔어요! 🌼':'끝까지 해냈어요! 🌱'}</h1><div class="score">${pending?'—':score}${pending?'':'<span style="font-size:24px">점</span>'}</div><p>${pending?`설명 ${pending}문항을 확인하면 점수가 완성돼요.<br>아래 기준을 보며 보호자와 함께 읽어 보세요.`:`${qs.length}문제 중 ${good}문제를 맞혔어요.`}</p><div class="actions">${wrong.length&&!pending?'<button id="retry">틀린 문제 다시 풀기</button>':''}<button id="home" class="ghost">새 평가 만들기</button></div></section>${reviewGroups(states)}`;
-  document.querySelector('#home').onclick=()=>{if(pending&&!confirm('아직 확인하지 않은 설명이 있어요. 새 평가를 만들까요?'))return;home();};
+  document.querySelector('#home').onclick=()=>requestStudyRoute('math-home',home);
   if(wrong.length&&!pending)document.querySelector('#retry').onclick=()=>{qs=wrong;answers=qs.map(()=>[]);manualChecks={};pos=0;reviewMode=true;render();window.scrollTo(0,0);};
   document.querySelectorAll('.rubric-button').forEach(button=>button.onclick=()=>{const y=window.scrollY;manualChecks[button.dataset.review]=button.dataset.value==='yes';result();window.scrollTo(0,y);});
 }

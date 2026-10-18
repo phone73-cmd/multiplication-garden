@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.18: picture learning and untimed practice. */
+/* 구구단 연습 v1.8.19: picture learning and untimed practice. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -45,7 +45,7 @@ const TimesGarden={
   picture(a,b,interactive=false,highlight=0){
     return `<div class="times-picture ${a>=8?'times-dots':''}" role="group" aria-label="${a}개씩 ${b}묶음">${Array.from({length:b},(_,i)=>`<${interactive?'button':'div'} ${interactive?`type="button" data-group="${i+1}" aria-pressed="${i<highlight}"`:''} class="times-group ${i<highlight?'lit':''}" aria-label="${i+1}번째 묶음, ${a}개"><span class="times-objects" style="--objects:${a}" aria-hidden="true">${Array.from({length:a},()=>a>=8?'<i></i>':'<span>🍎</span>').join('')}</span><small>${i+1}묶음</small></${interactive?'button':'div'}>`).join('')}</div>`;
   },
-  bindHome(){document.querySelector('#times-home').onclick=()=>{if(this.active()&&!confirm('구구단 홈으로 갈까요? 풀고 있는 연습은 저장되지 않아요.'))return;this.home();};},
+  bindHome(){document.querySelector('#times-home').onclick=()=>{if(window.GardenNav?.request)return window.GardenNav.request('times-home');this.home();};},
   learn(){
     this.phase='learn';window.GardenNav?.sync('times-learn');const a=this.dans[0],b=this.b;
     app.innerHTML=`<section class="panel times"><button id="times-home" class="ghost">← 구구단 홈</button><h2>${a}단 · 곱셈 익히기</h2><p>${a}개씩 ${b}묶음이에요.</p>${this.picture(a,b,true,this.highlight)}<p id="times-group-total" role="status">${this.highlight?`${a}개씩 ${this.highlight}묶음은 ${a*this.highlight}개예요.`:'묶음을 눌러 함께 세어 보세요.'}</p><p class="times-sum">${Array(b).fill(a).join(' + ')} = <button type="button" class="times-question" data-reveal aria-label="덧셈식 정답 ${this.revealed?'가리기':'보기'}">${this.revealed?a*b:'?'}</button></p><div class="times-equation">${a} × ${b} = <button type="button" class="times-question" data-reveal aria-label="곱셈식 정답 ${this.revealed?'가리기':'보기'}">${this.revealed?a*b:'?'}</button></div><div class="actions"><button id="times-prev" class="ghost" ${b===1?'disabled':''}>← 이전 식</button><button id="times-next" ${b===9?'disabled':''}>다음 식 →</button></div><p class="muted">${b} / 9</p></section>`;
