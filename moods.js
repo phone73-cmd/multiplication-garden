@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.11: a remembered mood, resolved by the visible draw before admission. */
+/* 배움정원 v1.8.12: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
