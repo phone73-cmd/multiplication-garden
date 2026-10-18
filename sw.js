@@ -1,6 +1,6 @@
-/* 지안이의 배움정원 v1.8.4: only this app's assets and cache names. */
-const CACHE_NAME='learning-garden-v1.8.4';
-const ASSETS=['./','./index.html','./app.js','./study.js','./times.js','./navigation.js','./appearance.js','./questions.js','./manifest.webmanifest','./dictation/index.html','./dictation/dictation.js','./icon-192.png','./icon-512.png','./icon.svg','./apple-touch-icon.png'];
+/* 지안이의 배움정원 v1.8.5: only this app's assets and cache names. */
+const CACHE_NAME='learning-garden-v1.8.5';
+const ASSETS=['./','./index.html','./app.js','./study.js','./times.js','./navigation.js','./appearance.js','./questions.js','./manifest.webmanifest','./dictation/index.html','./dictation/dictation.js','./icon-192.png','./icon-512.png','./assets/logout-door.webp','./icon.svg','./apple-touch-icon.png'];
 const assetURLs=new Set(ASSETS.map(path=>new URL(path,self.registration.scope).href));
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));

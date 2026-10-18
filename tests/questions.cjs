@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{},session=new Map();
-const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,value)=>session.set(key,value)},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
+const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,value)=>session.set(key,value),removeItem:key=>session.delete(key)},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();authenticated?hub():login();',''),context);
@@ -98,6 +98,23 @@ api.render();assert.equal(vm.runInContext('screen',context),'login');
 nodes.get('#garden-code').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
 assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'hub');assert.equal(session.get('garden-authenticated'),'yes');vm.runInContext("authenticated=sessionStorage.getItem('garden-authenticated')==='yes'",context);assert.equal(vm.runInContext('authenticated',context),true);
 assert.equal(vm.runInContext('history.length',context),2);
+// Logout revokes session access, keeps saved data and permits a fresh admission.
+const priorLocalStorage=context.localStorage,localData=new Map([['garden-history','saved scores'],['dictation-stats','saved dictation'],['garden-appearance','saved theme']]);
+context.localStorage={getItem:k=>localData.get(k)??null,setItem:(k,v)=>localData.set(k,v),removeItem:k=>localData.delete(k)};
+const savedData=JSON.stringify([...localData]);
+vm.runInContext('logoutGarden()',context);
+assert.equal(vm.runInContext('authenticated',context),false);
+assert.equal(session.has('garden-authenticated'),false);
+assert.equal(vm.runInContext('screen',context),'login');
+assert.equal(nodes.get('#logout-button').hidden,true);
+assert.equal(JSON.stringify([...localData]),savedData);
+vm.runInContext('home();openDictation()',context);assert.equal(vm.runInContext('screen',context),'login');
+nodes.get('#garden-code').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
+assert.equal(vm.runInContext('authenticated',context),true);
+assert.equal(vm.runInContext('screen',context),'hub');
+assert.equal(nodes.get('#logout-button').hidden,false);
+context.localStorage=priorLocalStorage;
+console.log('Logout: session revoked, admission required again, local records/settings unchanged and hub-only button visibility passed.');
 console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');
 
 // Every error item has a genuinely wrong first equality and valid intermediate arithmetic.

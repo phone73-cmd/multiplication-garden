@@ -43,9 +43,9 @@ function dictationContext(allow,options={}){
  // Scoped worker must leave another GitHub Pages app's cache and requests alone.
  const events={},deleted=[];let fetchCalls=0;
  const scope='https://example.test/multiplication-garden/';
- const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.8.4','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
- const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.8.4'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
- let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.8.4'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
+ const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.8.5','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
+ const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.8.5'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
+ let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.8.5'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
  events.fetch({request:{method:'GET',url:'https://example.test/other-app/index.html'},respondWith(){throw Error('intercepted another app');}});assert.equal(fetchCalls,1);
  // Import validation plus rollback on a failed second storage write.
  const values=new Map([['garden-history','[{"score":70,"date":"old"}]'],['dictation-best','{"1":6}']]);let fail=true;
@@ -78,6 +78,6 @@ appearance.media.matches=false;appearance.media.changed();assert.equal(appearanc
 const retained=appearanceFixture({theme:'dark',palette:'pink'},{theme:'light',palette:'mint'});assert.equal(retained.api.get().palette,'mint');assert.equal(retained.root.style.colorScheme,'light dark');
 assert.equal(retained.api.choose({theme:'bad',palette:'bad'}),false);
 const nativeTemplate=JSON.parse(moduleSource.match(/view\.innerHTML=(.*);\n/)[1]);
-assert(!nativeTemplate.includes('id="ver"'));assert(!nativeTemplate.includes('화면설정'));assert(nativeTemplate.includes('>← 받아쓰기 홈</button>'));
+assert(!nativeTemplate.includes('id="ver"'));assert(!nativeTemplate.includes('화면설정'));assert(nativeTemplate.includes('aria-label="받아쓰기 홈"'));assert(nativeTemplate.includes('>🏠</span></button>'));assert(!nativeTemplate.includes('← 받아쓰기 홈'));
 assert(!nativeTemplate.includes('iframe'));assert(!nativeTemplate.includes('overflow-y:'));assert(!nativeTemplate.includes('height:calc(100dvh'));
 console.log('v1.6.1: shared 3 brightness / 6 palettes, legacy migration, persistence, system changes, native single document, grade navigation and one version passed');

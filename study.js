@@ -1,9 +1,10 @@
-/* 지안이의 배움정원 v1.8.4 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.5 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
   const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
+  const logout=document.querySelector('#logout-button');if(logout)logout.hidden=name!=='hub';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
   const route={login:'login',hub:'hub',home:'math-home',quiz:'math-quiz',result:'math-result'}[name];if(route)window.GardenNav?.sync(route);
 }
@@ -20,6 +21,13 @@ function returnToHub(){
     stopDictation();
   }
   hub();window.scrollTo(0,0);
+}
+function logoutGarden(){
+  authenticated=false;
+  try{sessionStorage.removeItem('garden-authenticated');}catch{try{sessionStorage.setItem('garden-authenticated','no');}catch{}}
+  stopDictation();
+  qs=[];answers=[];manualChecks={};pos=0;
+  login();window.scrollTo(0,0);
 }
 function hub(){
   if(!authenticated)return login();
@@ -90,9 +98,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.4',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.5',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.4-backup.json';
+  const filename='learning-garden-v1.8.5-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -131,3 +139,5 @@ async function importStudyFile(event){
   document.querySelector('#backup-notice').textContent=message;
 }
 document.querySelector('#study-home').onclick=returnToHub;
+
+const logoutButton=document.querySelector('#logout-button');if(logoutButton)logoutButton.onclick=logoutGarden;
