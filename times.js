@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.24: picture learning and untimed practice. */
+/* 구구단 연습 v1.8.25: picture learning and optional gentle per-question countdown. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -22,19 +22,23 @@ const TimesEngine={
   validHistory(value){return Array.isArray(value)&&value.every(r=>r&&typeof r.id==='string'&&typeof r.date==='string'&&Number.isInteger(r.total)&&r.total>=1&&r.total<=30&&Number.isInteger(r.first)&&r.first>=0&&r.first<=r.total&&Number.isInteger(r.second)&&r.second>=0&&r.first+r.second<=r.total);}
 };
 const TimesGarden={
-  mode:'learn',dans:[2],count:10,phase:'home',queue:[],records:[],index:0,tries:0,done:false,retry:false,saved:false,saveError:false,
+  mode:'learn',dans:[2],count:10,timeLimit:(()=>{try{const n=Number(localStorage.getItem('garden-times-seconds'));return [0,5,10].includes(n)?n:0;}catch{return 0;}})(),phase:'home',queue:[],records:[],index:0,tries:0,done:false,retry:false,saved:false,saveError:false,
   active(){return screen==='times'&&this.phase==='quiz';},
   open(){if(!authenticated)return login();stopDictation();screen='times';setStudyScreen(screen);this.phase='home';this.home();window.scrollTo(0,0);},
   home(){
-    if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.phase='home';window.GardenNav?.sync('times-home');
+    this.pauseClock();if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.phase='home';window.GardenNav?.sync('times-home');
     const single=['learn','ordered'].includes(this.mode);if(single)this.dans=this.dans.slice(0,1);
     let weakCount=0,factError=false;const weakDans=new Set();try{const weak=TimesEngine.weakFacts(TimesEngine.readFacts(),[2,3,4,5,6,7,8,9]);weak.forEach(q=>weakDans.add(q.a));weakCount=weak.filter(q=>this.dans.includes(q.a)).length;}catch{factError=true;}
-    app.innerHTML=`<section class="panel times"><span class="eyebrow">조금씩 익히는 구구단</span><h1>🌻 구구단 연습</h1><p>그림으로 익히고, 내 속도로 풀어 봐요.</p><fieldset><legend>어떻게 연습할까요?</legend><div class="times-options times-mode-options">${[['learn','🌷','곱셈 익히기'],['ordered','🔢','순서대로 풀기'],['mixed','🎲','섞어서 풀기'],['weak','🌱','틀린 문제']].map(([v,icon,t])=>`<button type="button" class="times-mode-card" data-mode="${v}" aria-pressed="${this.mode===v}"><span aria-hidden="true">${icon}</span><small>${t}</small></button>`).join('')}</div></fieldset><fieldset><legend>${single?'한 단을 골라 주세요.':'연습할 단을 모두 골라 주세요.'}</legend><div class="times-options">${[2,3,4,5,6,7,8,9].map(d=>`<button type="button" class="ghost${weakDans.has(d)?' has-mistakes':''}" data-dan="${d}" aria-pressed="${this.dans.includes(d)}" aria-label="${d}단${weakDans.has(d)?', 복습할 틀린 문제 있음':''}">${d}단${weakDans.has(d)?'<span class="dan-mistake-dot" aria-hidden="true"></span>':''}</button>`).join('')}</div></fieldset>${!single?`<div class="times-count-row"><label for="times-count">문제 수<select id="times-count">${[10,20,30].map(n=>`<option ${n===this.count?'selected':''}>${n}</option>`).join('')}</select></label><button type="button" id="times-all" class="ghost">전체 선택</button><button type="button" id="times-none" class="ghost">전체 해제</button></div>`:this.mode==='ordered'?'<p>한 단 끝까지 · 9문제</p>':'<p>묶음을 누르면 1묶음부터 차례로 강조돼요.</p>'}${this.mode==='weak'?`<p class="muted">${factError?'오답 기록을 읽지 못했어요. 백업 파일이나 저장 상태를 확인해 주세요.':weakCount?'선택한 단의 틀린 식 '+weakCount+'개 중 최대 '+this.count+'문제를 풀어요.':'선택한 단에 모아둔 틀린 문제가 없어요. 새로 푼 문제부터 모아요.'}</p><p class="muted">혼자 연속 세 번 맞히면 틀린 문제에서 빠져요.</p>`:''}<button id="times-start" ${!this.dans.length||this.mode==='weak'&&(!weakCount||factError)?'disabled':''}>${this.mode==='learn'?'그림 보러 가기':this.mode==='weak'?'틀린 문제 풀기':'연습 시작하기'}</button></section>`;
+    app.innerHTML=`<section class="panel times"><span class="eyebrow">조금씩 익히는 구구단</span><h1>🌻 구구단 연습</h1><p>그림으로 익히고, 내 속도로 풀어 봐요.</p><fieldset><legend>어떻게 연습할까요?</legend><div class="times-options times-mode-options">${[['learn','🌷','곱셈 익히기'],['ordered','🔢','순서대로 풀기'],['mixed','🎲','섞어서 풀기'],['weak','🌱','틀린문제 풀기']].map(([v,icon,t])=>`<button type="button" class="times-mode-card" data-mode="${v}" aria-pressed="${this.mode===v}"><span aria-hidden="true">${icon}</span><small>${t}</small></button>`).join('')}</div></fieldset><fieldset><legend>${single?'한 단을 골라 주세요.':'연습할 단을 모두 골라 주세요.'}</legend><div class="times-options">${[2,3,4,5,6,7,8,9].map(d=>`<button type="button" class="ghost${weakDans.has(d)?' has-mistakes':''}" data-dan="${d}" aria-pressed="${this.dans.includes(d)}" aria-label="${d}단${weakDans.has(d)?', 복습할 틀린 문제 있음':''}">${d}단${weakDans.has(d)?'<span class="dan-mistake-dot" aria-hidden="true"></span>':''}</button>`).join('')}</div></fieldset>${!single?'<div class="times-selection-actions"><button type="button" id="times-all" class="ghost">전체 선택</button><button type="button" id="times-none" class="ghost">전체 해제</button></div>':''}${this.mode!=='learn'?`<div class="times-count-row times-practice-settings"><label for="times-count">문제 수<select id="times-count" ${this.mode==='ordered'?'disabled':''}>${this.mode==='ordered'?'<option>9</option>':[10,20,30].map(n=>`<option ${n===this.count?'selected':''}>${n}</option>`).join('')}</select></label><label for="times-seconds">문제당 시간<select id="times-seconds">${[[0,'시간 없이'],[10,'10초'],[5,'5초']].map(([n,t])=>`<option value="${n}" ${n===this.timeLimit?'selected':''}>${t}</option>`).join('')}</select></label></div>${this.mode==='ordered'?'<p class="muted">한 단 끝까지 · 9문제</p>':''}`:'<p>묶음을 누르면 1묶음부터 차례로 강조돼요.</p>'}${this.mode==='weak'?`<p class="muted">${factError?'오답 기록을 읽지 못했어요. 백업 파일이나 저장 상태를 확인해 주세요.':weakCount?'선택한 단의 틀린 식 '+weakCount+'개 중 최대 '+this.count+'문제를 풀어요.':'선택한 단에 모아둔 틀린 문제가 없어요. 새로 푼 문제부터 모아요.'}</p><p class="muted">혼자 연속 세 번 맞히면 틀린 문제에서 빠져요.</p>`:''}<button id="times-start" ${!this.dans.length||this.mode==='weak'&&(!weakCount||factError)?'disabled':''}>${this.mode==='learn'?'그림 보러 가기':this.mode==='weak'?'틀린문제 풀기':'연습 시작하기'}</button></section>`;
     document.querySelectorAll('[data-mode]').forEach(el=>el.onclick=()=>{this.mode=el.dataset.mode;this.home();});
     document.querySelectorAll('[data-dan]').forEach(el=>el.onclick=()=>{const d=Number(el.dataset.dan);this.dans=single?[d]:this.dans.includes(d)?this.dans.filter(x=>x!==d):[...this.dans,d];this.home();});
     const all=document.querySelector('#times-all');if(all)all.onclick=()=>{this.dans=[2,3,4,5,6,7,8,9];this.home();};
     const none=document.querySelector('#times-none');if(none)none.onclick=()=>{this.dans=[];this.home();};
     const count=document.querySelector('#times-count');if(count)count.onchange=()=>{this.count=Number(count.value);if(this.mode==='weak')this.home();};
+    const seconds=document.querySelector('#times-seconds');if(seconds)seconds.onchange=()=>{
+      const value=Number(seconds.value);if(![0,5,10].includes(value))return;
+      this.timeLimit=value;try{localStorage.setItem('garden-times-seconds',String(value));}catch{}
+    };
     document.querySelector('#times-start').onclick=()=>{
       if(!this.dans.length)return;
       if(this.mode==='learn'){this.learnFruit=window.GardenPictures?.choose('fruits',this.learnFruit);this.b=1;this.revealed=false;this.highlight=0;this.learn();}
@@ -55,23 +59,24 @@ const TimesGarden={
     const move=delta=>{this.b+=delta;this.revealed=false;this.highlight=0;this.learn();};
     document.querySelector('#times-prev').onclick=()=>{if(this.b>1)move(-1);};document.querySelector('#times-next').onclick=()=>{if(this.b<9)move(1);};
   },
-  start(queue,retry=false){this.queue=queue.map(q=>({...q}));this.records=[];this.index=0;this.retry=retry;this.saved=false;this.saveError=false;this.id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);this.beginQuestion();},
-  beginQuestion(){if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.tries=0;this.done=false;this.phase='quiz';this.quiz();},
+  start(queue,retry=false){this.pauseClock();this.runTimeLimit=this.timeLimit;this.queue=queue.map(q=>({...q}));this.records=[];this.index=0;this.retry=retry;this.saved=false;this.saveError=false;this.id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);this.beginQuestion();},
+  beginQuestion(){if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.tries=0;this.done=false;this.phase='quiz';this.remainingMs=(this.runTimeLimit||0)*1000;this.clockPaused=true;this.feedbackHint=false;this.quiz();},
   quiz(){
     window.GardenNav?.sync('times-quiz');const q=this.queue[this.index];
-    app.innerHTML=`<section class="panel times"><button id="times-home" class="ghost">← 구구단 홈</button><p class="eyebrow">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1} / ${this.queue.length}</p><h2>곱을 구해 보세요.</h2><form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요.</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
+    app.innerHTML=`<section class="panel times"><button id="times-home" class="ghost">← 구구단 홈</button><p class="eyebrow">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1} / ${this.queue.length}</p><h2>곱을 구해 보세요.</h2><form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요!!</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
     this.bindHome();const input=document.querySelector('#times-answer');
-    input.oninput=()=>{input.value=input.value.replace(/\D/g,'').slice(0,2);};
-    document.querySelectorAll('[data-key]').forEach(el=>el.onclick=()=>{if(this.done)return;const k=el.dataset.key;input.value=k==='지우기'?'':k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,2);});
+    input.oninput=()=>{input.value=input.value.replace(/\D/g,'').slice(0,2);this.clearClockHint();};
+    document.querySelectorAll('[data-key]').forEach(el=>el.onclick=()=>{if(this.done)return;const k=el.dataset.key;input.value=k==='지우기'?'':k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,2);this.clearClockHint();});
     document.querySelector('#times-form').onsubmit=e=>{e.preventDefault();this.submit();};
     document.querySelector('#times-continue').onclick=()=>this.advance();
+    this.resumeClock();
   },
   submit(){
     if(this.done)return;const input=document.querySelector('#times-answer'),feedback=document.querySelector('#times-feedback'),q=this.queue[this.index];
-    if(!/^\d{1,2}$/.test(input.value)){feedback.textContent='답을 써 주세요.';return;}
+    if(!/^\d{1,2}$/.test(input.value)){this.feedbackHint=true;feedback.textContent='답을 써 주세요.';return;}
     const correct=TimesEngine.check(q,input.value);this.tries++;
-    if(!correct&&this.tries===1){feedback.textContent='한 번 더 생각해 볼까요?';input.value='';return;}
-    this.done=true;this.records.push({...q,first:correct&&this.tries===1,second:correct&&this.tries===2});
+    if(!correct&&this.tries===1){this.feedbackHint=true;feedback.textContent='한 번 더 생각해 볼까요?';input.value='';return;}
+    this.pauseClock();this.done=true;this.records.push({...q,first:correct&&this.tries===1,second:correct&&this.tries===2});
     try{localStorage.setItem('garden-times-facts',JSON.stringify(TimesEngine.recordFact(TimesEngine.readFacts(),q,correct&&this.tries===1)));}catch{this.saveError=true;}
     feedback.textContent=correct?(this.tries===1?'맞았어요! 🌼':'다시 풀어 맞혔어요! 🌱'):`${q.a} × ${q.b} = ${q.a*q.b}입니다. 그림으로 확인해요.`;
     input.disabled=true;document.querySelector('#times-check').hidden=true;document.querySelectorAll('[data-key]').forEach(el=>el.disabled=true);
@@ -79,10 +84,36 @@ const TimesGarden={
     const next=document.querySelector('#times-continue');next.hidden=false;next.textContent=correct?'맞았어요! 다음 문제로 이동해요…':this.index===this.queue.length-1?'결과 보기':'다음 문제 →';
     if(correct)this.scheduleAdvance();
   },
+  clearClockHint(){if(this.runTimeLimit&&!this.done){this.feedbackHint=false;this.paintClock();}},
+  paintClock(){
+    if(this.done||this.phase!=='quiz')return;
+    const feedback=document.querySelector('#times-feedback');if(!feedback)return;
+    let text;if(!this.remainingMs){this.feedbackHint=false;text='천천히 생각해도 괜찮아요!!';}
+    else if(!this.feedbackHint)text=`남은 시간 ${Math.ceil(this.remainingMs/1000)}초`;
+    if(text!==undefined&&feedback.textContent!==text)feedback.textContent=text;
+  },
+  tickClock(){
+    if(this.clockTimer){clearTimeout(this.clockTimer);this.clockTimer=null;}
+    if(this.clockPaused||this.done||!this.active())return;
+    this.remainingMs=Math.max(0,this.clockDeadline-Date.now());this.paintClock();
+    if(this.remainingMs)this.clockTimer=setTimeout(()=>{this.clockTimer=null;this.tickClock();},Math.min(250,this.remainingMs));
+  },
+  pauseClock(){
+    const running=!!this.runTimeLimit&&!this.clockPaused&&!this.done&&this.phase==='quiz'&&this.remainingMs>0;
+    if(running)this.remainingMs=Math.max(0,this.clockDeadline-Date.now());
+    if(this.clockTimer){clearTimeout(this.clockTimer);this.clockTimer=null;}
+    this.clockPaused=true;return running;
+  },
+  resumeClock(){
+    if(this.done||!this.active())return;
+    if(!this.runTimeLimit){this.remainingMs=0;this.paintClock();return;}
+    if(this.clockPaused){this.clockPaused=false;this.clockDeadline=Date.now()+this.remainingMs;}
+    this.tickClock();
+  },
   advance(){if(!this.done)return;if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}if(++this.index<this.queue.length)this.beginQuestion();else this.finish();},
   scheduleAdvance(){if(this.nextTimer)clearTimeout(this.nextTimer);this.nextTimer=setTimeout(()=>{this.nextTimer=null;if(this.phase==='quiz'&&this.done)this.advance();},800);},
   finish(){
-    this.phase='result';window.GardenNav?.sync('times-result');const first=this.records.filter(r=>r.first).length,second=this.records.filter(r=>r.second).length;
+    this.pauseClock();this.phase='result';window.GardenNav?.sync('times-result');const first=this.records.filter(r=>r.first).length,second=this.records.filter(r=>r.second).length;
     if(!this.saved&&!this.retry){this.saved=true;try{const old=readStudyValue('garden-times-history',[]);if(!TimesEngine.validHistory(old))throw Error('기록 형식');localStorage.setItem('garden-times-history',JSON.stringify([...old,{id:this.id,date:new Date().toISOString(),total:this.queue.length,first,second}]));}catch{this.saveError=true;}}
     this.wrong=this.records.filter(r=>!r.first);
     app.innerHTML=`<section class="panel times"><span class="eyebrow">${this.retry?'다시 연습 완료':'오늘도 한 걸음 성장했어요'}</span><h1>끝까지 해냈어요! 🌻</h1><p>처음에 맞힌 문제 <strong>${first}개</strong><br>다시 풀어 맞힌 문제 <strong>${second}개</strong><br>정답을 함께 확인한 문제 <strong>${this.queue.length-first-second}개</strong></p>${this.saveError?'<p role="alert">기록을 저장하지 못했어요. 현재 결과는 아래에서 확인할 수 있어요.</p>':''}<div class="actions">${this.wrong.length?'<button id="times-retry">틀린 문제 다시 풀기</button>':''}<button id="times-home" class="ghost">구구단 홈</button></div>${this.wrong.length?`<h2>다시 살펴볼 식</h2><p class="muted">처음에 틀렸던 문제를 모았어요.</p>${this.wrong.map(q=>`<p>${q.a} × ${q.b} = ${q.a*q.b}</p>`).join('')}`:'<p>모두 처음에 맞혔어요! 🌼</p>'}</section>`;

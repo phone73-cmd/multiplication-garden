@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.24: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.25: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
   const browser=window.history,historyEnabled=!!(browser?.pushState&&window.addEventListener);
   const routes={
@@ -7,7 +7,7 @@ window.GardenNav=(()=>{
     'dictation-home':1,'dictation-quiz':2,'dictation-done':2,'dictation-settings':2
   };
   const marker='learning-garden-navigation-v1';
-  let current=null,pending=null,handling=false,leaveBox=null,leaveTarget=null,pausedAdvance=false,pausedDictation=false,returnFocus=null;
+  let current=null,pending=null,handling=false,leaveBox=null,leaveTarget=null,pausedAdvance=false,pausedClock=false,pausedDictation=false,returnFocus=null;
   const entry=route=>({garden:marker,route,depth:routes[route]});
   const valid=s=>s?.garden===marker&&Object.hasOwn(routes,s.route)&&s.depth===routes[s.route];
   const replace=route=>{current=entry(route);browser.replaceState(current,'');};
@@ -55,6 +55,7 @@ window.GardenNav=(()=>{
     }
     leaveTarget=target;returnFocus=document.activeElement;
     pausedDictation=screen==='dictation'&&!!dictationController?.pauseSpeech?.();
+    pausedClock=screen==='times'&&!!TimesGarden.pauseClock?.();
     pausedAdvance=screen==='times'&&!!TimesGarden.nextTimer;
     if(pausedAdvance){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
     leaveBox.querySelector('#garden-leave-message').textContent=message;
@@ -62,17 +63,19 @@ window.GardenNav=(()=>{
   }
   function closeLeave(exit){
     if(leaveTarget===null)return;
-    const target=leaveTarget,resume=pausedAdvance,resumeDictation=pausedDictation;leaveTarget=null;pausedAdvance=false;pausedDictation=false;
+    const target=leaveTarget,resume=pausedAdvance,resumeClock=pausedClock,resumeDictation=pausedDictation;leaveTarget=null;pausedAdvance=false;pausedClock=false;pausedDictation=false;
     leaveBox.close();
     if(exit){renderRoute(target);window.scrollTo(0,0);}
     else{
       if(resume&&screen==='times'&&TimesGarden.active()&&TimesGarden.done)TimesGarden.scheduleAdvance();
+      if(resumeClock&&screen==='times')TimesGarden.resumeClock?.();
       if(resumeDictation&&screen==='dictation')dictationController?.resumeSpeech?.();
       if(returnFocus?.isConnected)returnFocus.focus();
     }
   }
   function renderRoute(route){
     if(!authenticated){login();return;}
+    if(screen==='times')TimesGarden.pauseClock?.();
     if(screen==='times'&&TimesGarden.nextTimer){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
     const dialog=document.querySelector('#appearance-dialog');if(route!=='appearance'&&dialog?.open)dialog.close();
     if(route==='appearance'){window.GardenAppearance.open();return;}

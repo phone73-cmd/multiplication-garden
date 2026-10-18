@@ -1,7 +1,8 @@
-/* 지안이의 배움정원 v1.8.24 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.25 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
+  if(name!=='times'&&typeof TimesGarden!=='undefined')TimesGarden.pauseClock?.();
   if(document.body)document.body.dataset.screen=name;
   if(name!=='hub'){hubExpressions=null;window.GardenMood?.leaveWelcome();}
   const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
@@ -113,7 +114,7 @@ function reviewGroups(states){
   const cards=list=>list.map(x=>reviewCard(x.q,x.i,x.state)).join('');
   return `${pending.length||written.length?`<section class="panel review-writing"><h2>서술형 확인하기 · ${pending.length}개 남았어요</h2>${cards(pending)}${written.length?`<details><summary>확인한 서술형 ${written.length}문제</summary>${cards(written)}</details>`:''}</section>`:''}${wrong.length?`<section class="panel review-wrong"><h2>틀린 문제 다시 보기 · ${wrong.length}문제</h2>${cards(wrong)}</section>`:''}${good.length?`<details class="panel review-correct"><summary>맞힌 문제 ${good.length}개 보기</summary>${cards(good)}</details>`:''}`;
 }
-const studyBackupKeys=['garden-welcome-flower','garden-mood','garden-times-facts','garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
+const studyBackupKeys=['garden-times-seconds','garden-welcome-flower','garden-mood','garden-times-facts','garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
 function validStudyBackup(text){
   const obj=JSON.parse(text);
   if(!obj||obj.app!=='liah-learning-garden'||obj.format!==1||!obj.data||typeof obj.data!=='object'||Array.isArray(obj.data))throw Error('배움정원에서 내보낸 파일을 골라 주세요.');
@@ -122,6 +123,8 @@ function validStudyBackup(text){
     if(!studyBackupKeys.includes(key))throw Error('알 수 없는 저장 항목이 있어요.');
     if(key==='garden-welcome-flower'){
       if(!value||typeof value!=='object'||Array.isArray(value)||!["daisy", "cosmos", "cherry-blossom", "plum-blossom", "rose", "peony", "carnation", "hydrangea", "tulip", "sunflower", "daffodil", "morning-glory", "violet", "pansy", "lily-of-the-valley", "forget-me-not"].includes(value.current))throw Error('오늘의 꽃 선택을 확인해 주세요.');
+    }else if(key==='garden-times-seconds'){
+      if(![0,5,10].includes(value))throw Error('문제당 시간 설정을 확인해 주세요.');
     }else if(key==='garden-times-facts'){
       if(!TimesEngine.validFacts(value))throw Error('구구단 오답 기록을 확인해 주세요.');
     }else if(key==='garden-times-history'){
@@ -156,9 +159,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.24',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.25',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.24-backup.json';
+  const filename='learning-garden-v1.8.25-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -182,6 +185,7 @@ function applyStudyBackup(data){
   const before={};for(const key of Object.keys(data))before[key]=localStorage.getItem(key);
   try{for(const [key,value]of Object.entries(data))localStorage.setItem(key,JSON.stringify(value));}
   catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch{}}throw e;}
+  if(Object.hasOwn(data,'garden-times-seconds')&&typeof TimesGarden!=='undefined')TimesGarden.timeLimit=data['garden-times-seconds'];
   if(data['garden-history'])history=data['garden-history'];
   hubExpressions=null;
   window.GardenAppearance?.reload();window.GardenMood?.reload();window.GardenFlowers?.reload();
