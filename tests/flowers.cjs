@@ -3,6 +3,7 @@ const setup=fs.readFileSync(__dirname+'/moods.cjs','utf8').split('const f=make()
 const make=new Function('require','__dirname',setup+'\nreturn make;')(require,__dirname);
 const data=new Map(),f=make(data),api=f.ctx.window.GardenFlowers,run=s=>vm.runInContext(s,f.ctx);
 assert.equal(api.items.length,16);assert.equal(api.get(),null);
+for(const item of api.items){const bytes=fs.readFileSync(path.join(__dirname,'..',item.src));assert(bytes.length>12,item.name+' image is empty');assert.equal(bytes.toString('ascii',0,4),'RIFF',item.name+' RIFF header');assert.equal(bytes.toString('ascii',8,12),'WEBP',item.name+' WebP header');assert.equal(bytes.readUInt32LE(4)+8,bytes.length,item.name+' image is truncated');}
 run('login()');f.get('#garden-code').value='0000';f.get('#login-form').onsubmit({preventDefault(){}});assert.equal(api.get(),null);
 f.get('#garden-code').value='0619';f.get('#login-form').onsubmit({preventDefault(){}});const first=api.current();assert(f.app.innerHTML.includes('<figcaption>'+first.name+'</figcaption>'));assert(fs.existsSync(path.join(__dirname,'..',first.src)));
 run('refreshCurrentScreen();hub()');assert.equal(api.current().key,first.key);
