@@ -4,7 +4,7 @@ const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,Stri
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../pictures.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
-vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();authenticated?hub():login();',''),context);
+vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();startGarden();',''),context);
 const api=vm.runInContext('({makeQuestion,expected,correct,buildAssessment,typePlan,controls,describe,answerState,tableMarkup,render,result,readAnswer,refreshCurrentScreen,names,lifeScenes,wordScenes,GardenQuestions})',context);
 vm.runInContext('authenticated=true',context);
 const testCompare=(n,op,v)=>op==='<'?n<v:op==='<='?n<=v:op==='>'?n>v:n>=v;

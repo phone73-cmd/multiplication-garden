@@ -2,7 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const storage=new Map(),nodes=new Map(),getNode=s=>{if(!nodes.has(s))nodes.set(s,{attrs:{},setAttribute(k,v){this.attrs[k]=v;}});return nodes.get(s);},app={innerHTML:''};let random=0,calls=0;
 const math=Object.create(Math);math.random=()=>{calls++;return random;};
 const context=vm.createContext({console,Date,Math:math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},sessionStorage:{getItem:()=>null},document:{body:{dataset:{}},querySelector:s=>s==='#app'?app:getNode(s),querySelectorAll:()=>[]},window:{scrollTo(){}},setTimeout(){}});
-for(const file of ['study.js','questions.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/../'+file,'utf8').replace('installPullToRefresh();authenticated?hub():login();',''),context);
+for(const file of ['study.js','questions.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/../'+file,'utf8').replace('installPullToRefresh();startGarden();',''),context);
 const run=s=>vm.runInContext(s,context),read=s=>JSON.parse(JSON.stringify(run(s)));
 storage.set('garden-times-facts',JSON.stringify({'3x1':{attempts:100,wrong:10},'7x4':{attempts:2,wrong:2},'7x5':{attempts:8,wrong:0}}));
 run("history=[{score:30,date:'old'}, {score:70,date:'new',danStats:{4:{attempts:10,wrong:6},7:{attempts:100,wrong:1}}}]");

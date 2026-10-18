@@ -38,3 +38,10 @@ nav.request('dictation-home');choose(true);assert.equal(entries[index].route,'di
 ctx.dictationController.hasDraft=()=>false;ctx.hub();flush();window.GardenAppearance.open();browser.go(-1);flush();assert.equal(appearance.open,false);assert.equal(ctx.screen,'hub');
 browser.go(-1);flush();assert.equal(index,0);assert(entries[index].external);
 console.log('Browser Back: in-app explicit exit/cancel without native confirm, repeated back, preserved input, paused/resumed automatic advance, subject parents, forward and dictation draft guard passed.');
+
+// Refresh recovery must reuse the matching current entry, preserving its parent chain.
+nav.restore('times-quiz',()=>{ctx.screen='times';ctx.TimesGarden.quiz();});
+const restoredIndex=index,restoredLength=entries.length;assert.equal(entries[index].route,'times-quiz');assert.equal(entries[index-1].route,'times-home');
+nav.restore('times-quiz',()=>ctx.TimesGarden.quiz());assert.equal(index,restoredIndex);assert.equal(entries.length,restoredLength);
+browser.go(-1);flush();assert(leaveBox.open);choose(true);assert.equal(entries[index].route,'times-home');
+console.log('Reload navigation: matching route reuse, parent chain, no duplicate entries and browser Back exit passed.');

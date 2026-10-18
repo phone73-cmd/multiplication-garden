@@ -19,7 +19,7 @@ function make(saved=data){
  document:{body:{dataset:{}},querySelector:s=>s==='#app'?app:get(s),querySelectorAll:()=>[]},
  window:{scrollY:0,scrollTo(){},matchMedia:()=>({matches:reduced}),GardenDictation:{mount:()=>({destroy(){},refresh(){},hasDraft:()=>false})}},confirm:()=>true,setTimeout:timeout,clearTimeout:clear});
  for(const file of ['moods.js','flowers.js','study.js','questions.js','app.js']){
-  let source=fs.readFileSync(root+'/'+file,'utf8');if(file==='app.js')source=source.replace('installPullToRefresh();authenticated?hub():login();','');vm.runInContext(source,ctx);
+  let source=fs.readFileSync(root+'/'+file,'utf8');if(file==='app.js')source=source.replace('installPullToRefresh();startGarden();','');vm.runInContext(source,ctx);
  }
  return {ctx,api:ctx.window.GardenMood,app,get,buttons:()=>buttons,welcome:()=>welcome,setReduced:v=>reduced=v,tick,pending:()=>jobs.size};
 }

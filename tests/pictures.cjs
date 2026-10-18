@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..'),handlers={},nodes=new Map();
 const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',innerHTML:'',classList:{toggle(){}},setAttribute(){}});return nodes.get(s);};
 const ctx=vm.createContext({console,navigator:{},Math,Date,Set,Map,JSON,Number,String,RegExp,localStorage:{getItem:()=>null,setItem(){}},sessionStorage:{getItem:()=>null},document:{querySelector:get,querySelectorAll:()=>[],addEventListener:(n,fn)=>handlers[n]=fn,body:{dataset:{}}},window:{scrollTo(){}},setTimeout(){},clearTimeout(){},confirm:()=>true});
 for(const file of ['pictures.js','times.js','study.js','questions.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
-vm.runInContext(fs.readFileSync(path.join(root,'app.js'),'utf8').replace('installPullToRefresh();authenticated?hub():login();',''),ctx);
+vm.runInContext(fs.readFileSync(path.join(root,'app.js'),'utf8').replace('installPullToRefresh();startGarden();',''),ctx);
 const api=vm.runInContext('({pictures:window.GardenPictures,times:TimesGarden,buildAssessment,makeQuestion,lifeScenes,expected,correct,movementPicture})',ctx);
 const {pictures,times}=api,sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 assert.equal(pictures.pools.fruits.length,11);assert.equal(pictures.pools.groups.length,28);assert.equal(pictures.pools.dense.length,14);

@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.27: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.28: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
   const browser=window.history,historyEnabled=!!(browser?.pushState&&window.addEventListener);
   const routes={
@@ -118,5 +118,17 @@ window.GardenNav=(()=>{
     if(message)showLeave(message,route);else renderRoute(route);
     return true;
   }
-  return {sync,request};
+  function restore(route,render){
+    if(!Object.hasOwn(routes,route))return false;
+    if(historyEnabled){
+      if(valid(browser.state)&&browser.state.route===route)current=browser.state;
+      else{
+        replace('hub');
+        if(routes[route]===2){const parent=route.split('-')[0]+'-home';current=entry(parent);browser.pushState(current,'');}
+        if(routes[route]>0){current=entry(route);browser.pushState(current,'');}
+      }
+    }else current=entry(route);
+    handling=true;try{render();}finally{handling=false;}return true;
+  }
+  return {sync,request,restore};
 })();
