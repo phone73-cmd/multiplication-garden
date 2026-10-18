@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.1: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.2: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
   const browser=window.history;
   if(!browser?.pushState||!window.addEventListener)return {sync(){}};
