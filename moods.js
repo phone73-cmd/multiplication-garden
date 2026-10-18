@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.7: a remembered mood, resolved once per successful admission. */
+/* 배움정원 v1.8.8: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
@@ -50,6 +50,17 @@ window.GardenMood=(()=>{
     "poster": "assets/moods/sleepy-still.webp"
   }
 ];
+  const encouragement={
+    greeting:'오늘도 만나서 반가워!',
+    'eye-smile':'그 웃음, 참 예뻐!',
+    excited:'신나는 마음으로 시작해 볼까?',
+    surprised:'천천히 해도 괜찮아!',
+    thinking:'곰곰이 생각하는 너, 멋져!',
+    sad:'속상했구나. 잠깐 쉬어도 괜찮아.',
+    determined:'하나씩 해보자. 넌 할 수 있어!',
+    sleepy:'졸리면 잠깐 쉬어 가자!'
+  };
+  let activeDraw=null;
   const key='garden-mood',keys=items.map(x=>x.key);
   const valid=value=>value&&typeof value==='object'&&!Array.isArray(value)&&[...keys,'random'].includes(value.choice)&&keys.includes(value.current);
   const initial=()=>({choice:'greeting',current:'greeting'});
@@ -60,25 +71,56 @@ window.GardenMood=(()=>{
     if(![...keys,'random'].includes(choice))return false;
     state.choice=choice;if(choice!=='random')state.current=choice;save();return true;
   }
-  function enter(){
-    state.current=state.choice==='random'?items[Math.floor(Math.random()*items.length)].key:state.choice;
-    save();return current();
-  }
+  function enter(){save();return current();}
   function current(){return items.find(x=>x.key===state.current)||items[0];}
   function picker(){
     const options=[...items,{key:'random',label:'랜덤',poster:'assets/icons/dice.webp'}];
-    return '<fieldset class="mood-picker"><legend>오늘 지안이 기분은?</legend><div class="mood-grid">'+options.map(item=>'<button type="button" class="mood-choice" data-mood="'+item.key+'" aria-pressed="'+(state.choice===item.key)+'"><img src="'+item.poster+'" alt="" width="40" height="52" decoding="async"><span>'+item.label+'</span></button>').join('')+'</div></fieldset>';
+    return '<fieldset class="mood-picker"><legend>오늘 지안이 기분은?</legend><div class="mood-grid">'+options.map(item=>'<button type="button" class="mood-choice" data-mood="'+item.key+'" aria-pressed="'+(item.key===state.current)+'"'+(item.key==='random'?' aria-label="랜덤으로 기분 뽑기"':'')+'><img src="'+item.poster+'" alt="" width="40" height="52" decoding="async"><span>'+item.label+'</span></button>').join('')+'</div><p id="mood-draw-status" class="mood-draw-status" role="status" aria-live="polite">'+(state.choice==='random'?'오늘은 '+current().label+'!':'')+'</p></fieldset>';
   }
+  function cancelDraw(){activeDraw?.cancel();}
   function bind(root){
-    const buttons=[...root.querySelectorAll('[data-mood]')];
+    cancelDraw();
+    const buttons=[...root.querySelectorAll('[data-mood]')],status=root.querySelector('#mood-draw-status'),submit=root.querySelector('#garden-enter'),grid=root.querySelector('.mood-grid');
+    const update=()=>buttons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mood===state.current)));
+    const busy=value=>{buttons.forEach(b=>b.disabled=value);if(submit)submit.disabled=value;grid?.setAttribute('aria-busy',String(value));};
+    const clearHighlights=()=>buttons.forEach(b=>{b.classList.remove('is-drawing');b.classList.remove('is-picked');});
+    function draw(){
+      if(activeDraw)return;
+      const winnerIndex=Math.floor(Math.random()*items.length),winner=items[winnerIndex];
+      let timer=null,stopped=false;
+      const cleanup=()=>{if(timer!==null)clearTimeout(timer);clearHighlights();busy(false);activeDraw=null;};
+      const cancel=()=>{stopped=true;cleanup();if(status)status.textContent=state.choice==='random'?'오늘은 '+current().label+'!':'';};
+      const finish=()=>{
+        if(stopped)return;
+        cleanup();state.choice='random';state.current=winner.key;save();update();
+        buttons.find(b=>b.dataset.mood===winner.key)?.classList.add('is-picked');
+        if(status)status.textContent='오늘은 '+winner.label+'!';
+      };
+      activeDraw={cancel};clearHighlights();busy(true);
+      if(status)status.textContent='두근두근, 어떤 기분일까?';
+      if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
+      const delays=[60,70,80,90,100,110,130,160,200,240,300,360];
+      let step=0;
+      const tick=()=>{
+        if(stopped)return;
+        if(root.isConnected===false){cancel();return;}
+        clearHighlights();
+        const item=items[(winnerIndex-(delays.length-1)+step+items.length*2)%items.length];
+        buttons.find(b=>b.dataset.mood===item.key)?.classList.add('is-drawing');
+        timer=setTimeout(()=>{if(++step===delays.length)finish();else tick();},delays[step]);
+      };
+      tick();
+    }
     for(const button of buttons)button.onclick=()=>{
-      choose(button.dataset.mood);
-      buttons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mood===state.choice)));
+      if(activeDraw)return;
+      if(button.dataset.mood==='random'){draw();return;}
+      clearHighlights();choose(button.dataset.mood);update();
+      if(status)status.textContent='';
     };
   }
   function markup(){
     const item=current();
-    return '<div class="welcome-mood"><img id="welcome-mood-image" src="'+item.src+'" data-poster="'+item.poster+'" width="448" height="576" alt="'+item.label+' 표정의 지안이 캐릭터" decoding="async"></div>';
+    return '<figure class="welcome-mood"><img id="welcome-mood-image" src="'+item.src+'" data-poster="'+item.poster+'" width="448" height="576" alt="'+item.label+' 표정의 지안이 캐릭터" decoding="async"><figcaption>'+encouragement[item.key]+'</figcaption></figure>';
   }
   function bindWelcome(root){
     const img=root.querySelector('#welcome-mood-image');if(!img)return;
@@ -87,5 +129,5 @@ window.GardenMood=(()=>{
     update();
     img.onerror=()=>{img.onerror=null;img.src=img.dataset.poster;};
   }
-  return {items,valid,choose,enter,current,picker,bind,markup,bindWelcome,get:()=>({...state}),reload(){state=read();}};
+  return {items,valid,choose,enter,current,picker,bind,markup,bindWelcome,cancelDraw,drawing:()=>!!activeDraw,get:()=>({...state}),reload(){state=read();}};
 })();
