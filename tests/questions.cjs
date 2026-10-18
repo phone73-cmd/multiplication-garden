@@ -86,16 +86,16 @@ assert.equal(vm.runInContext("josa('사과','을/를')",context),'를');
 vm.runInContext('authenticated=false;home()',context);
 assert.equal(vm.runInContext('screen',context),'login');
 assert(vm.runInContext('app.innerHTML',context).includes('지안이의'));
-context.document.querySelector('#garden-password');
+context.document.querySelector('#garden-code');
 for(const pin of ['','619','0000','06190']){
- nodes.get('#garden-password').value=pin;nodes.get('#garden-password').focus=noop;
+ nodes.get('#garden-code').value=pin;nodes.get('#garden-code').focus=noop;
  nodes.get('#login-form').onsubmit({preventDefault:noop});
  assert.equal(vm.runInContext('authenticated',context),false);
  assert.equal(vm.runInContext('screen',context),'login');
 }
 api.refreshCurrentScreen();assert.equal(vm.runInContext('screen',context),'login');
 api.render();assert.equal(vm.runInContext('screen',context),'login');
-nodes.get('#garden-password').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
+nodes.get('#garden-code').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
 assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'hub');assert.equal(session.get('garden-authenticated'),'yes');vm.runInContext("authenticated=sessionStorage.getItem('garden-authenticated')==='yes'",context);assert.equal(vm.runInContext('authenticated',context),true);
 assert.equal(vm.runInContext('history.length',context),2);
 console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');

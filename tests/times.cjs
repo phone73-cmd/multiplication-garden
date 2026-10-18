@@ -28,3 +28,17 @@ get('#times-retry').onclick();for(let i=0;i<2;i++){answer.value=String(garden.qu
 // A correct answer announces the result, then advances after the configured 800 ms.
 garden.start([{a:2,b:3}]);answer.value='6';garden.submit();assert.equal(garden.done,true);assert(get('#times-continue').textContent.includes('맞았어요!'));assert.equal(timers.size,1);timers.values().next().value();timers.clear();assert.equal(garden.phase,'result');
 console.log(JSON.stringify({cases,pictures:72,controller:'empty input, first/second attempts, duplicate submit, picture feedback, results, retry and backup roundtrip passed'}));
+
+// Cumulative fact records keep first-attempt errors, graduate after recent solo successes,
+// prioritize the least secure facts, and travel with the existing backup format.
+let facts={};facts=engine.recordFact(facts,{a:7,b:8},false);facts=engine.recordFact(facts,{a:6,b:9},false);
+assert(engine.validFacts(facts));assert.equal(engine.weakQueue(facts,[7],30).length,1);assert.equal(engine.weakQueue(facts,[2],10).length,0);
+for(let i=0;i<3;i++)facts=engine.recordFact(facts,{a:7,b:8},true);
+assert.equal(engine.weakQueue(facts,[7],10).length,0);
+facts=engine.recordFact(facts,{a:7,b:8},false);assert.equal(engine.weakQueue(facts,[7],10).length,1);
+assert.equal(facts['7x8'].attempts,5);assert.equal(facts['7x8'].wrong,2);assert.equal(facts['7x8'].streak,0);
+const selected=engine.weakQueue(facts,[6,7],30);assert.equal(new Set(selected.map(q=>q.a+'x'+q.b)).size,selected.length);
+assert(!engine.validFacts({'9x10':facts['7x8']}));assert(!engine.validFacts({'7x8':{...facts['7x8'],wrong:10}}));
+ctx.factBackup={app:'liah-learning-garden',format:1,data:{'garden-times-facts':facts}};
+assert.equal(vm.runInContext('validStudyBackup(JSON.stringify(factBackup))["garden-times-facts"]["7x8"].wrong',ctx),2);
+console.log('Cumulative mistakes: attempts, mastery, returning errors, dan filter, unique queues and backup passed.');

@@ -1,10 +1,11 @@
-/* 지안이의 배움정원 v1.7.4 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.0 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
   const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
+  const route={login:'login',hub:'hub',home:'math-home',quiz:'math-quiz',result:'math-result'}[name];if(route)window.GardenNav?.sync(route);
 }
 function readStudyValue(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
 function stopDictation(){if(dictationController){dictationController.destroy();dictationController=null;}}
@@ -51,14 +52,16 @@ function reviewGroups(states){
   const cards=list=>list.map(x=>reviewCard(x.q,x.i,x.state)).join('');
   return `${pending.length||written.length?`<section class="panel review-writing"><h2>서술형 확인하기 · ${pending.length}개 남았어요</h2>${cards(pending)}${written.length?`<details><summary>확인한 서술형 ${written.length}문제</summary>${cards(written)}</details>`:''}</section>`:''}${wrong.length?`<section class="panel review-wrong"><h2>틀린 문제 다시 보기 · ${wrong.length}문제</h2>${cards(wrong)}</section>`:''}${good.length?`<details class="panel review-correct"><summary>맞힌 문제 ${good.length}개 보기</summary>${cards(good)}</details>`:''}`;
 }
-const studyBackupKeys=['garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
+const studyBackupKeys=['garden-times-facts','garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
 function validStudyBackup(text){
   const obj=JSON.parse(text);
   if(!obj||obj.app!=='liah-learning-garden'||obj.format!==1||!obj.data||typeof obj.data!=='object'||Array.isArray(obj.data))throw Error('배움정원에서 내보낸 파일을 골라 주세요.');
   const data={};
   for(const [key,value]of Object.entries(obj.data)){
     if(!studyBackupKeys.includes(key))throw Error('알 수 없는 저장 항목이 있어요.');
-    if(key==='garden-times-history'){
+    if(key==='garden-times-facts'){
+      if(!TimesEngine.validFacts(value))throw Error('구구단 오답 기록을 확인해 주세요.');
+    }else if(key==='garden-times-history'){
       if(!TimesEngine.validHistory(value))throw Error('구구단 기록을 확인해 주세요.');
     }else if(key==='garden-appearance'){
       if(!value||!['system','light','dark'].includes(value.theme)||!['pink','sky','mint','lavender','peach','lemon'].includes(value.palette))throw Error('화면 설정이 올바르지 않아요.');
@@ -87,9 +90,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.7.4',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.0',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.7.4-backup.json';
+  const filename='learning-garden-v1.8.0-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
