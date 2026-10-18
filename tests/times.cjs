@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const nodes=new Map(),data=new Map();const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',hidden:false,disabled:false,textContent:'',innerHTML:'',classList:{toggle(){}},setAttribute(){}});return nodes.get(s);};
-const ctx=vm.createContext({console,Math,Date,localStorage:{getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},document:{querySelector:get,querySelectorAll:()=>[],body:{dataset:{}}},window:{scrollTo(){}},confirm:()=>true});
+const nodes=new Map(),data=new Map(),timers=new Map();let timerId=0;const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',hidden:false,disabled:false,textContent:'',innerHTML:'',classList:{toggle(){}},setAttribute(){}});return nodes.get(s);};
+const ctx=vm.createContext({console,Math,Date,localStorage:{getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},document:{querySelector:get,querySelectorAll:()=>[],body:{dataset:{}}},window:{scrollTo(){}},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),confirm:()=>true});
 vm.runInContext(fs.readFileSync(__dirname+'/../times.js','utf8')+'\nlet screen="times",authenticated=true;const app={innerHTML:""};function stopDictation(){};function login(){};',ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),ctx);
 const {engine,garden}=vm.runInContext('({engine:TimesEngine,garden:TimesGarden})',ctx);
@@ -25,4 +25,6 @@ get('#times-continue').onclick();assert.equal(garden.phase,'result');garden.fini
 const restored=vm.runInContext('validStudyBackup(JSON.stringify({app:"liah-learning-garden",format:1,data:{"garden-times-history":JSON.parse(localStorage.getItem("garden-times-history"))}}))',ctx);assert.equal(restored['garden-times-history'][0].total,3);
 assert(!engine.validHistory([{id:'x',date:'x',total:3,first:3,second:1}]));
 get('#times-retry').onclick();for(let i=0;i<2;i++){answer.value=String(garden.queue[i].a*garden.queue[i].b);garden.submit();get('#times-continue').onclick();}assert.equal(JSON.parse(data.get('garden-times-history')).length,1);
+// A correct answer announces the result, then advances after the configured 800 ms.
+garden.start([{a:2,b:3}]);answer.value='6';garden.submit();assert.equal(garden.done,true);assert(get('#times-continue').textContent.includes('맞았어요!'));assert.equal(timers.size,1);timers.values().next().value();timers.clear();assert.equal(garden.phase,'result');
 console.log(JSON.stringify({cases,pictures:72,controller:'empty input, first/second attempts, duplicate submit, picture feedback, results, retry and backup roundtrip passed'}));

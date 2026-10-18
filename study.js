@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v1.7.0 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.7.1 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -11,6 +11,7 @@ function stopDictation(){if(dictationController){dictationController.destroy();d
 function returnToHub(){
   if(!authenticated)return login();
   if(screen==='times'&&TimesGarden.active()&&!confirm('배움정원 홈으로 갈까요? 풀고 있는 연습은 저장되지 않아요.'))return;
+  if(screen==='times'&&TimesGarden.nextTimer){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
   if(screen==='quiz'&&!confirm('배움정원 홈으로 갈까요? 풀고 있는 답은 저장되지 않아요.'))return;
   if(screen==='result'&&qs.some((q,i)=>answerState(q,answers[i])==='pending')&&!confirm('아직 확인하지 않은 설명이 있어요. 배움정원 홈으로 갈까요?'))return;
   if(screen==='dictation'){
@@ -24,7 +25,7 @@ function hub(){
   stopDictation();screen='hub';setStudyScreen(screen);
   const stats=readStudyValue('dictation-stats',{}),rows=stats&&typeof stats==='object'?Object.values(stats):[];
   const runs=rows.reduce((sum,r)=>sum+(Number.isFinite(r?.runs)?r.runs:0),0);
-  app.innerHTML=`<section class="study-welcome"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1><p>숫자를 생각하고, 바른 글을 써 봐요.</p><div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div></section><div class="subject-grid"><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span>2 × 3</span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span>3 × 4</span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
+  app.innerHTML=`<section class="study-welcome"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1><p>숫자를 생각하고, 바른 글을 써 봐요.</p><div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div></section><div class="subject-grid"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span>3 × 4</span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span>2 × 3</span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
   document.querySelector('#open-math').onclick=()=>{home();window.scrollTo(0,0);};
   document.querySelector('#open-times').onclick=()=>TimesGarden.open();
   document.querySelector('#open-dictation').onclick=openDictation;
@@ -86,9 +87,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.7.0',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.7.1',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.7.0-backup.json';
+  const filename='learning-garden-v1.7.1-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
