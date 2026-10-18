@@ -39,10 +39,10 @@ assert(f.buttons().every(b=>!b.disabled));assert.equal(f.get('#garden-enter').di
 f.get('#garden-code').value='0000';f.get('#login-form').onsubmit({preventDefault(){}});
 assert.equal(randomCalls,1);assert.equal(vm.runInContext('authenticated',f.ctx),false);
 f.get('#garden-code').value='0619';f.get('#login-form').onsubmit({preventDefault(){}});
-const afterAdmission=randomCalls;assert.equal(afterAdmission,5);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
+const afterAdmission=randomCalls;assert.equal(afterAdmission,14);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
 assert.equal(f.welcome().src,'assets/moods/determined.webp');assert(!f.app.innerHTML.includes('class="study-sprouts"'));
-assert(f.app.innerHTML.includes('하나씩 해보자. 넌 할 수 있어!'));
-vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,afterAdmission);assert.equal(mood.current().key,'determined');
+const hubCaption=f.app.innerHTML.match(/<figcaption>(.*?)<\/figcaption>/)[1];assert(hubCaption.length>0);
+vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,afterAdmission);assert(f.app.innerHTML.includes('<figcaption>'+hubCaption+'</figcaption>'));assert.equal(mood.current().key,'determined');
 const reboot=make();assert.equal(reboot.api.get().choice,'random');assert.equal(reboot.api.current().key,'determined');
 vm.runInContext('hub()',reboot.ctx);assert.equal(reboot.welcome().src,'assets/moods/determined.webp');assert.equal(randomCalls,afterAdmission+4);
 // Refreshing the login view cancels the old draw without writing a pending winner.
@@ -62,3 +62,27 @@ f.ctx.backupText=JSON.stringify({...backup,data:{'garden-mood':{choice:'random',
 assert.equal(make(new Map([['garden-mood','invalid json']])).api.current().key,'greeting');
 const sw=fs.readFileSync(root+'/sw.js','utf8');for(const item of mood.items)for(const key of ['src','poster'])assert(sw.includes('"./'+item[key]+'"'));
 console.log('Mood picker: 8 choices + random, PIN preserved, invalid PIN does not resolve random, completed draw retained through login, hub/refresh persistence, no duplicate drawing, cancellation, static previews, reduced motion, eight encouragement captions, fallback, backup validation/restore and offline assets passed.');
+
+// Each mood has ten distinct phrases per cycle; bags persist across reload and backup.
+const phraseFixture=make(new Map());const captionsFor=api=>api.markup().match(/<figcaption>(.*?)<\/figcaption>/)[1];
+for(const item of phraseFixture.api.items){
+ const api=phraseFixture.api;api.choose(item.key);api.leaveWelcome();let previous;
+ for(let cycle=0;cycle<3;cycle++){
+  const seen=new Set();
+  for(let i=0;i<10;i++){
+   const text=captionsFor(api);assert(text&&text!==previous,'no adjacent repeats: '+item.key);assert(!seen.has(text),'ten unique per cycle');seen.add(text);previous=text;
+   assert.equal(captionsFor(api),text,'stable markup while on hub');
+   api.reload();assert(api.valid(api.get())); // reload keeps unused phrase indexes
+  }
+  assert.equal(seen.size,10);
+ }
+}
+const savedMood=phraseFixture.api.get();phraseFixture.ctx.backupText=JSON.stringify({app:'liah-learning-garden',format:1,data:{'garden-mood':savedMood}});
+vm.runInContext('applyStudyBackup(validStudyBackup(backupText))',phraseFixture.ctx);assert.deepEqual(phraseFixture.api.get(),savedMood);
+for(const messages of [[],{bad:{last:0,remaining:[1]}},{greeting:{last:0,remaining:[0]}},{greeting:{last:0,remaining:[1,1]}},{greeting:{last:10,remaining:[]}}]){
+ const value={choice:'greeting',current:'greeting',messages};assert(!phraseFixture.api.valid(value));
+ phraseFixture.ctx.backupText=JSON.stringify({app:'liah-learning-garden',format:1,data:{'garden-mood':value}});assert.throws(()=>vm.runInContext('validStudyBackup(backupText)',phraseFixture.ctx));
+}
+vm.runInContext("authenticated=true;hub()",phraseFixture.ctx);const beforeRefresh=captionsFor(phraseFixture.api);vm.runInContext('refreshCurrentScreen()',phraseFixture.ctx);assert.equal(captionsFor(phraseFixture.api),beforeRefresh);
+vm.runInContext("setStudyScreen('home');hub()",phraseFixture.ctx);assert.notEqual(captionsFor(phraseFixture.api),beforeRefresh);
+console.log('80 encouragements: ten unique phrases per mood for three cycles, no boundary repeats, persisted bags, backup roundtrip/invalid rejection, stable hub refresh and fresh home entry passed.');

@@ -1,9 +1,9 @@
-/* 지안이의 배움정원 v1.8.9 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.10 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
   if(document.body)document.body.dataset.screen=name;
-  if(name!=='hub')hubExpressions=null;
+  if(name!=='hub'){hubExpressions=null;window.GardenMood?.leaveWelcome();}
   const appearance=document.querySelector('#appearance-button');if(appearance)appearance.hidden=name!=='hub';
   const logout=document.querySelector('#logout-button');if(logout)logout.hidden=name!=='hub';
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
@@ -104,7 +104,7 @@ function validStudyBackup(text){
       if(!value||!['system','light','dark'].includes(value.theme)||!['pink','sky','mint','lavender','peach','lemon'].includes(value.palette))throw Error('화면 설정이 올바르지 않아요.');
     }else if(key==='garden-mood'){
       const moodKeys=['greeting','eye-smile','excited','surprised','thinking','sad','determined','sleepy'];
-      if(!value||typeof value!=='object'||Array.isArray(value)||![...moodKeys,'random'].includes(value.choice)||!moodKeys.includes(value.current))throw Error('기분 선택을 확인해 주세요.');
+      if(!value||typeof value!=='object'||Array.isArray(value)||![...moodKeys,'random'].includes(value.choice)||!moodKeys.includes(value.current)||(value.messages!==undefined&&(!value.messages||typeof value.messages!=='object'||Array.isArray(value.messages)||Object.entries(value.messages).some(([mood,bag])=>!moodKeys.includes(mood)||!bag||!Number.isInteger(bag.last)||bag.last<0||bag.last>9||!Array.isArray(bag.remaining)||bag.remaining.length>9||new Set(bag.remaining).size!==bag.remaining.length||bag.remaining.some(i=>!Number.isInteger(i)||i<0||i>9||i===bag.last)))))throw Error('기분 선택을 확인해 주세요.');
     }else if(key==='garden-history'){
       if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')||(h.danStats!==undefined&&!validDanStats(h.danStats))))throw Error('수학 기록을 확인해 주세요.');
     }else{
@@ -130,9 +130,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.9',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.10',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.9-backup.json';
+  const filename='learning-garden-v1.8.10-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
