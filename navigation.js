@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.3: browser Back follows subject -> garden hierarchy. */
+/* 배움정원 v1.8.4: browser Back follows subject -> garden hierarchy. */
 window.GardenNav=(()=>{
   const browser=window.history;
   if(!browser?.pushState||!window.addEventListener)return {sync(){}};
@@ -8,7 +8,7 @@ window.GardenNav=(()=>{
     'dictation-home':1,'dictation-quiz':2,'dictation-done':2,'dictation-settings':2
   };
   const marker='learning-garden-navigation-v1';
-  let current=null,pending=null,handling=false,leaveBox=null,leaveTarget=null,pausedAdvance=false,returnFocus=null;
+  let current=null,pending=null,handling=false,leaveBox=null,leaveTarget=null,pausedAdvance=false,pausedDictation=false,returnFocus=null;
   const entry=route=>({garden:marker,route,depth:routes[route]});
   const valid=s=>s?.garden===marker&&Object.hasOwn(routes,s.route)&&s.depth===routes[s.route];
   const replace=route=>{current=entry(route);browser.replaceState(current,'');};
@@ -54,6 +54,7 @@ window.GardenNav=(()=>{
       leaveBox.onclose=()=>{if(leaveTarget!==null)closeLeave(false);};
     }
     leaveTarget=target;returnFocus=document.activeElement;
+    pausedDictation=screen==='dictation'&&!!dictationController?.pauseSpeech?.();
     pausedAdvance=screen==='times'&&!!TimesGarden.nextTimer;
     if(pausedAdvance){clearTimeout(TimesGarden.nextTimer);TimesGarden.nextTimer=null;}
     leaveBox.querySelector('#garden-leave-message').textContent=message;
@@ -61,11 +62,12 @@ window.GardenNav=(()=>{
   }
   function closeLeave(exit){
     if(leaveTarget===null)return;
-    const target=leaveTarget,resume=pausedAdvance;leaveTarget=null;pausedAdvance=false;
+    const target=leaveTarget,resume=pausedAdvance,resumeDictation=pausedDictation;leaveTarget=null;pausedAdvance=false;pausedDictation=false;
     leaveBox.close();
     if(exit){renderRoute(target);window.scrollTo(0,0);}
     else{
       if(resume&&screen==='times'&&TimesGarden.active()&&TimesGarden.done)TimesGarden.scheduleAdvance();
+      if(resumeDictation&&screen==='dictation')dictationController?.resumeSpeech?.();
       if(returnFocus?.isConnected)returnFocus.focus();
     }
   }
@@ -106,5 +108,11 @@ window.GardenNav=(()=>{
     current=next;handling=true;
     try{renderRoute(next.route);window.scrollTo(0,0);}finally{handling=false;}
   });
-  return {sync};
+  function request(route){
+    if(!Object.hasOwn(routes,route))return false;
+    const message=leaveMessage(route);
+    if(message)showLeave(message,route);else renderRoute(route);
+    return true;
+  }
+  return {sync,request};
 })();

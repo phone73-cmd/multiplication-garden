@@ -29,6 +29,12 @@ ctx.TimesGarden.quiz();ctx.TimesGarden.records=[{a:2,b:3}];ctx.TimesGarden.finis
 ctx.TimesGarden.quiz();ctx.TimesGarden.home();ctx.TimesGarden.quiz();flush();assert.equal(entries[index].route,'times-quiz');assert.equal(entries[index-1].route,'times-home');
 ctx.hub();flush();ctx.home();ctx.render();browser.go(-1);flush();choose(false);assert.equal(ctx.screen,'quiz');browser.go(-1);flush();choose(true);assert.equal(ctx.screen,'home');
 ctx.hub();flush();ctx.openDictation();nav.sync('dictation-settings');ctx.dictationController.hasDraft=()=>true;browser.go(-1);flush();choose(false);assert.equal(entries[index].route,'dictation-settings');browser.go(-1);flush();choose(true);assert.equal(entries[index].route,'dictation-home');
+let speechPaused=0,speechResumed=0;
+ctx.dictationController.pauseSpeech=()=>{speechPaused++;return true;};
+ctx.dictationController.resumeSpeech=()=>{speechResumed++;};
+nav.sync('dictation-quiz');nav.request('dictation-home');assert(leaveBox.open);choose(false);
+assert.equal(entries[index].route,'dictation-quiz');assert.equal(speechPaused,1);assert.equal(speechResumed,1);
+nav.request('dictation-home');choose(true);assert.equal(entries[index].route,'dictation-home');assert.equal(speechResumed,1);
 ctx.dictationController.hasDraft=()=>false;ctx.hub();flush();window.GardenAppearance.open();browser.go(-1);flush();assert.equal(appearance.open,false);assert.equal(ctx.screen,'hub');
 browser.go(-1);flush();assert.equal(index,0);assert(entries[index].external);
 console.log('Browser Back: in-app explicit exit/cancel without native confirm, repeated back, preserved input, paused/resumed automatic advance, subject parents, forward and dictation draft guard passed.');

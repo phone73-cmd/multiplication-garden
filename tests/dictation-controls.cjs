@@ -1,0 +1,20 @@
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const setup=fs.readFileSync(__dirname+'/integration.cjs','utf8').split('(async()=>{')[0];
+const make=new Function('require','__dirname',setup+'\nreturn dictationContext;')(require,__dirname);
+let now=0,seq=0;const jobs=new Map(),spoken=[];
+const clock={setTimeout(fn,delay){const id=++seq;jobs.set(id,{fn,at:now+delay});return id;},clearTimeout(id){jobs.delete(id);}};
+function tick(ms){const end=now+ms;for(;;){const due=[...jobs].filter(([,j])=>j.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!due)break;now=due[1].at;jobs.delete(due[0]);due[1].fn();}now=end;}
+const speech={speaking:false,getVoices:()=>[],addEventListener(){},removeEventListener(){},cancel(){this.speaking=false;},speak(u){spoken.push({text:u.text,at:now});this.speaking=false;}};
+const f=make(true,{window:{...clock,speechSynthesis:speech},globals:{speechSynthesis:speech,SpeechSynthesisUtterance:class{constructor(text){this.text=text;}},Option:class{constructor(text,value){this.text=text;this.value=value;}}}});
+const {api,elements:e,controller}=f;
+api.SET.mode='hear';api.SET.shuffle=false;
+api.start(1);tick(999);assert.equal(spoken.length,0);tick(1);assert.equal(spoken.length,1);assert.equal(spoken[0].at,1000);
+e.get('answer').value=api.DATA[0].items[0];api.check();api.next();tick(999);assert.equal(spoken.length,1);tick(1);assert.equal(spoken.length,2);assert.equal(spoken[1].text,api.DATA[0].items[1]);
+api.start(1);tick(200);e.get('btnListen').listeners.click();const manual=spoken.length;tick(1000);assert.equal(spoken.length,manual);
+api.start(1);e.get('answer').value='쓰던 답';e.get('btnHome').listeners.click();assert.equal(e.get('confirmBox').hidden,false);tick(2000);assert.equal(spoken.length,manual);assert.equal(e.get('answer').value,'쓰던 답');
+e.get('cfNo').onclick();assert.equal(e.get('quiz').hidden,false);tick(999);assert.equal(spoken.length,manual);tick(1);assert.equal(spoken.length,manual+1);
+api.start(1);e.get('btnHome').listeners.click();e.get('cfYes').onclick();assert.equal(e.get('home').hidden,false);const left=spoken.length;tick(2000);assert.equal(spoken.length,left);
+api.SET.mode='see';api.start(1);tick(2000);assert.equal(spoken.length,left);
+api.SET.mode='hear';api.start(1);controller.navigate('home');tick(2000);assert.equal(spoken.length,left);
+let route;f.window.GardenNav={sync(){},request:r=>route=r};api.start(1);e.get('btnHome').listeners.click();assert.equal(route,'dictation-home');controller.destroy();tick(2000);assert.equal(spoken.length,left);
+console.log('Dictation controls: first/next auto read at 1000ms, immediate manual listen without duplicate, internal home cancel/exit, paused/resumed speech, shared navigation and stale timer cleanup passed.');
