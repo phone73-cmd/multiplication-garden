@@ -42,9 +42,9 @@ function dictationContext(allow){
  // Scoped worker must leave another GitHub Pages app's cache and requests alone.
  const events={},deleted=[];let fetchCalls=0;
  const scope='https://example.test/multiplication-garden/';
- const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.7.3','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
- const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.7.3'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
- let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.7.3'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
+ const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.7.4','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
+ const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.7.4'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
+ let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.7.4'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
  events.fetch({request:{method:'GET',url:'https://example.test/other-app/index.html'},respondWith(){throw Error('intercepted another app');}});assert.equal(fetchCalls,1);
  // Import validation plus rollback on a failed second storage write.
  const values=new Map([['garden-history','[{"score":70,"date":"old"}]'],['dictation-best','{"1":6}']]);let fail=true;
@@ -66,15 +66,15 @@ function appearanceFixture(legacy,current){
  return {api:ctx.window.GardenAppearance,values,tokens,root,media,schemeMeta};
 }
 const appearance=appearanceFixture({theme:'dark',palette:'lavender'});
-assert.equal(appearance.api.get().theme,'dark');assert.equal(appearance.api.get().palette,'lavender');assert.equal(appearance.root.dataset.theme,'dark');assert.equal(appearance.root.style.colorScheme,'only dark');assert.equal(appearance.schemeMeta.content,'only dark');
+assert.equal(appearance.api.get().theme,'dark');assert.equal(appearance.api.get().palette,'lavender');assert.equal(appearance.root.dataset.theme,'dark');assert.equal(appearance.root.style.colorScheme,'light dark');assert.equal(appearance.schemeMeta.content,'light dark');
 assert.equal(JSON.parse(appearance.values.get('garden-appearance')).palette,'lavender');
 for(const theme of ['light','dark','system'])for(const palette of ['pink','sky','mint','lavender','peach','lemon']){
  assert(appearance.api.choose({theme,palette}));assert(appearance.tokens['--bg']);assert(appearance.tokens['--accent']);assert(appearance.tokens['--ink']);
  assert.equal(JSON.parse(appearance.values.get('garden-appearance')).palette,palette);
 }
 appearance.media.matches=true;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'dark');
-appearance.media.matches=false;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'light');assert.equal(appearance.root.style.colorScheme,'only light');assert.equal(appearance.schemeMeta.content,'only light');
-const retained=appearanceFixture({theme:'dark',palette:'pink'},{theme:'light',palette:'mint'});assert.equal(retained.api.get().palette,'mint');assert.equal(retained.root.style.colorScheme,'only light');
+appearance.media.matches=false;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'light');assert.equal(appearance.root.style.colorScheme,'light dark');assert.equal(appearance.schemeMeta.content,'light dark');
+const retained=appearanceFixture({theme:'dark',palette:'pink'},{theme:'light',palette:'mint'});assert.equal(retained.api.get().palette,'mint');assert.equal(retained.root.style.colorScheme,'light dark');
 assert.equal(retained.api.choose({theme:'bad',palette:'bad'}),false);
 const nativeTemplate=JSON.parse(moduleSource.match(/view\.innerHTML=(.*);\n/)[1]);
 assert(!nativeTemplate.includes('id="ver"'));assert(!nativeTemplate.includes('화면설정'));assert(nativeTemplate.includes('>← 받아쓰기 홈</button>'));

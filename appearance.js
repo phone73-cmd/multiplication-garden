@@ -1,4 +1,4 @@
-/* 배움정원 v1.6.1 — one appearance preference for every subject. */
+/* 배움정원 v1.7.4 — explicit theme choices and Samsung supported schemes. */
 window.GardenAppearance=(()=>{
 const palettes=[
   { id: "pink", name: "벚꽃 분홍",
@@ -35,27 +35,33 @@ const palettes=[
     const p=palettes.find(p=>p.id===state.palette),v=dark?p.D:p.L;
     const tokens={'--bg':v.bg,'--card':v.card,'--ink':dark?'#ece9f2':'#273e34','--muted':dark?'#b2b5ae':'#65766b','--line':v.line,'--accent':v.accent,'--accent-ink':v.ink,'--accent-soft':v.soft,'--on-accent':v.on,'--ok':dark?'#84d4a7':'#28794b','--ok-soft':dark?'#20382b':'#e5f4e9','--bad':dark?'#f0a1ab':'#a14935','--bad-soft':dark?'#39272b':'#fbf0e7','--hl':dark?'#4a4220':'#fff0bb'};
     for(const [key,value]of Object.entries(tokens))root.style.setProperty(key,value);
-    root.dataset.theme=dark?'dark':'light';root.style.colorScheme=dark?'only dark':'only light';
-    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content',dark?'only dark':'only light');
+    root.dataset.theme=dark?'dark':'light';root.style.colorScheme='light dark';root.style.backgroundColor=v.bg;
+    if(document.body)document.body.style.colorScheme=dark?'only dark':'only light';
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content','light dark');
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content',v.bg);
   }
   function choose(next){
     if(!valid(next))return false;
     try{localStorage.setItem(key,JSON.stringify(next));}catch{return false;}
-    state={...next};apply();return true;
+    state={...next};apply();syncControls();return true;
   }
   function open(){
     if(typeof authenticated==='undefined'||!authenticated)return;
     const box=document.querySelector('#appearance-dialog');
-    box.innerHTML=`<form method="dialog"><div class="topline"><h2>화면 설정</h2><button class="ghost" value="close" aria-label="화면 설정 닫기">닫기</button></div><fieldset><legend>밝기</legend><div class="appearance-options">${[['system','기기 설정'],['light','라이트'],['dark','다크']].map(([value,label])=>`<label><input type="radio" name="appearance-theme" value="${value}" ${state.theme===value?'checked':''}>${label}</label>`).join('')}</div></fieldset><fieldset><legend>색상</legend><div class="appearance-swatches">${palettes.map(p=>`<button type="button" data-palette="${p.id}" aria-pressed="${p.id===state.palette}"><i style="background:${p.L.accent}"></i>${p.name}</button>`).join('')}</div></fieldset><p id="appearance-notice" role="status">선택하면 모든 학습 화면에 바로 적용돼요.</p></form>`;
-    box.querySelectorAll('input[name="appearance-theme"]').forEach(input=>input.onchange=()=>update({theme:input.value}));
+    box.innerHTML=`<form method="dialog"><div class="topline"><h2>화면 설정</h2><button class="ghost" value="close" aria-label="화면 설정 닫기">닫기</button></div><fieldset><legend>밝기</legend><div class="appearance-options" role="group" aria-label="밝기 선택">${[['system','기기 설정'],['light','라이트'],['dark','다크']].map(([value,label])=>`<button type="button" class="appearance-theme" data-theme-choice="${value}" aria-pressed="${state.theme===value}">${label}</button>`).join('')}</div></fieldset><fieldset><legend>색상</legend><div class="appearance-swatches">${palettes.map(p=>`<button type="button" data-palette="${p.id}" aria-pressed="${p.id===state.palette}"><i style="background:${p.L.accent}"></i>${p.name}</button>`).join('')}</div></fieldset><p id="samsung-theme-note" class="muted" hidden>삼성 인터넷에서 라이트 화면이 계속 어두우면 브라우저의 웹페이지 다크 모드를 꺼 주세요.</p><p id="appearance-notice" role="status">선택하면 모든 학습 화면에 바로 적용돼요.</p></form>`;
+    box.querySelectorAll('[data-theme-choice]').forEach(button=>button.onclick=()=>update({theme:button.dataset.themeChoice}));
     box.querySelectorAll('[data-palette]').forEach(button=>button.onclick=()=>update({palette:button.dataset.palette}));
-    box.showModal();
+    syncControls();box.showModal();
+  }
+  function syncControls(){
+    document.querySelectorAll?.('#appearance-dialog [data-theme-choice]')?.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeChoice===state.theme)));
+    document.querySelectorAll?.('#appearance-dialog [data-palette]')?.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.palette===state.palette)));
+    const note=document.querySelector('#samsung-theme-note');
+    if(note)note.hidden=!(typeof navigator!=='undefined'&&/SamsungBrowser/i.test(navigator.userAgent||'')&&state.theme==='light');
   }
   function update(patch){
     const notice=document.querySelector('#appearance-notice');
     if(!choose({...state,...patch})){notice.textContent='설정을 저장하지 못했어요. 다시 시도해 주세요.';return;}
-    document.querySelectorAll('#appearance-dialog [data-palette]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.palette===state.palette)));
     notice.textContent='모든 학습 화면에 적용했어요.';
   }
   state=read();apply();
