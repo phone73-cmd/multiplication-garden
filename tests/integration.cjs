@@ -42,9 +42,9 @@ function dictationContext(allow){
  // Scoped worker must leave another GitHub Pages app's cache and requests alone.
  const events={},deleted=[];let fetchCalls=0;
  const scope='https://example.test/multiplication-garden/';
- const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.7.2','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
- const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.7.2'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
- let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.7.2'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
+ const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.7.3','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
+ const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.7.3'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
+ let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.7.3'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
  events.fetch({request:{method:'GET',url:'https://example.test/other-app/index.html'},respondWith(){throw Error('intercepted another app');}});assert.equal(fetchCalls,1);
  // Import validation plus rollback on a failed second storage write.
  const values=new Map([['garden-history','[{"score":70,"date":"old"}]'],['dictation-best','{"1":6}']]);let fail=true;
@@ -59,21 +59,21 @@ function dictationContext(allow){
 // Common appearance migrates legacy choices once, persists, and follows system changes.
 function appearanceFixture(legacy,current){
  const values=new Map();if(legacy)values.set('dictation-settings',JSON.stringify(legacy));if(current)values.set('garden-appearance',JSON.stringify(current));
- const tokens={},root=new Element();root.style.setProperty=(key,value)=>tokens[key]=value;
+ const tokens={},root=new Element(),schemeMeta={content:'only light',setAttribute(key,value){if(key==='content')this.content=value;}};root.style.setProperty=(key,value)=>tokens[key]=value;
  const media={matches:false,addEventListener:(name,fn)=>media.changed=fn};
- const ctx=vm.createContext({window:{matchMedia:()=>media},document:{documentElement:root,querySelector:()=>new Element()},localStorage:{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)}});
+ const ctx=vm.createContext({window:{matchMedia:()=>media},document:{documentElement:root,querySelector:selector=>selector==='meta[name="color-scheme"]'?schemeMeta:new Element()},localStorage:{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)}});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../appearance.js'),'utf8'),ctx);
- return {api:ctx.window.GardenAppearance,values,tokens,root,media};
+ return {api:ctx.window.GardenAppearance,values,tokens,root,media,schemeMeta};
 }
 const appearance=appearanceFixture({theme:'dark',palette:'lavender'});
-assert.equal(appearance.api.get().theme,'dark');assert.equal(appearance.api.get().palette,'lavender');assert.equal(appearance.root.dataset.theme,'dark');assert.equal(appearance.root.style.colorScheme,'only dark');
+assert.equal(appearance.api.get().theme,'dark');assert.equal(appearance.api.get().palette,'lavender');assert.equal(appearance.root.dataset.theme,'dark');assert.equal(appearance.root.style.colorScheme,'only dark');assert.equal(appearance.schemeMeta.content,'only dark');
 assert.equal(JSON.parse(appearance.values.get('garden-appearance')).palette,'lavender');
 for(const theme of ['light','dark','system'])for(const palette of ['pink','sky','mint','lavender','peach','lemon']){
  assert(appearance.api.choose({theme,palette}));assert(appearance.tokens['--bg']);assert(appearance.tokens['--accent']);assert(appearance.tokens['--ink']);
  assert.equal(JSON.parse(appearance.values.get('garden-appearance')).palette,palette);
 }
 appearance.media.matches=true;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'dark');
-appearance.media.matches=false;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'light');assert.equal(appearance.root.style.colorScheme,'only light');
+appearance.media.matches=false;appearance.media.changed();assert.equal(appearance.root.dataset.theme,'light');assert.equal(appearance.root.style.colorScheme,'only light');assert.equal(appearance.schemeMeta.content,'only light');
 const retained=appearanceFixture({theme:'dark',palette:'pink'},{theme:'light',palette:'mint'});assert.equal(retained.api.get().palette,'mint');assert.equal(retained.root.style.colorScheme,'only light');
 assert.equal(retained.api.choose({theme:'bad',palette:'bad'}),false);
 const nativeTemplate=JSON.parse(moduleSource.match(/view\.innerHTML=(.*);\n/)[1]);

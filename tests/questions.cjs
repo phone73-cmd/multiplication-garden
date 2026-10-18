@@ -1,9 +1,9 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const noop=()=>{};
-const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
+const noop=()=>{},session=new Map();
+const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,value)=>session.set(key,value)},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
-vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();login();',''),context);
+vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();authenticated?hub():login();',''),context);
 const api=vm.runInContext('({makeQuestion,expected,correct,buildAssessment,typePlan,controls,describe,answerState,tableMarkup,render,result,readAnswer,refreshCurrentScreen,names,lifeScenes,wordScenes,GardenQuestions})',context);
 vm.runInContext('authenticated=true',context);
 const testCompare=(n,op,v)=>op==='<'?n<v:op==='<='?n<=v:op==='>'?n>v:n>=v;
@@ -96,7 +96,7 @@ for(const pin of ['','619','0000','06190']){
 api.refreshCurrentScreen();assert.equal(vm.runInContext('screen',context),'login');
 api.render();assert.equal(vm.runInContext('screen',context),'login');
 nodes.get('#garden-password').value='0619';nodes.get('#login-form').onsubmit({preventDefault:noop});
-assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'hub');
+assert.equal(vm.runInContext('authenticated',context),true);assert.equal(vm.runInContext('screen',context),'hub');assert.equal(session.get('garden-authenticated'),'yes');vm.runInContext("authenticated=sessionStorage.getItem('garden-authenticated')==='yes'",context);assert.equal(vm.runInContext('authenticated',context),true);
 assert.equal(vm.runInContext('history.length',context),2);
 console.log('v1.5.0: particles 0..81, Hangul/rieul, wrong PIN, leading zero, login refresh/gate, valid PIN and retained history passed');
 

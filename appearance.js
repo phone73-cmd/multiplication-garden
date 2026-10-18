@@ -36,6 +36,7 @@ const palettes=[
     const tokens={'--bg':v.bg,'--card':v.card,'--ink':dark?'#ece9f2':'#273e34','--muted':dark?'#b2b5ae':'#65766b','--line':v.line,'--accent':v.accent,'--accent-ink':v.ink,'--accent-soft':v.soft,'--on-accent':v.on,'--ok':dark?'#84d4a7':'#28794b','--ok-soft':dark?'#20382b':'#e5f4e9','--bad':dark?'#f0a1ab':'#a14935','--bad-soft':dark?'#39272b':'#fbf0e7','--hl':dark?'#4a4220':'#fff0bb'};
     for(const [key,value]of Object.entries(tokens))root.style.setProperty(key,value);
     root.dataset.theme=dark?'dark':'light';root.style.colorScheme=dark?'only dark':'only light';
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content',dark?'only dark':'only light');
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content',v.bg);
   }
   function choose(next){
