@@ -1,0 +1,260 @@
+[
+  {
+    "name": "rainbow",
+    "emoji": "🌈",
+    "label": "무지개",
+    "src": "assets/icons/rainbow.webp"
+  },
+  {
+    "name": "sunflower",
+    "emoji": "🌻",
+    "label": "해바라기",
+    "src": "assets/icons/sunflower.webp"
+  },
+  {
+    "name": "book",
+    "emoji": "📖",
+    "label": "공책",
+    "src": "assets/icons/book.webp"
+  },
+  {
+    "name": "numbers",
+    "emoji": "🔢",
+    "label": "숫자 블록",
+    "src": "assets/icons/numbers.webp"
+  },
+  {
+    "name": "dice",
+    "emoji": "🎲",
+    "label": "주사위",
+    "src": "assets/icons/dice.webp"
+  },
+  {
+    "name": "home",
+    "emoji": "🏠",
+    "label": "홈",
+    "src": "assets/icons/home.webp"
+  },
+  {
+    "name": "settings",
+    "emoji": "⚙️",
+    "label": "설정",
+    "src": "assets/icons/settings.webp"
+  },
+  {
+    "name": "logout",
+    "emoji": "🚪",
+    "label": "로그아웃",
+    "src": "assets/icons/logout.webp"
+  },
+  {
+    "name": "tulip",
+    "emoji": "🌷",
+    "label": "튤립",
+    "src": "assets/icons/tulip.webp"
+  },
+  {
+    "name": "daisy",
+    "emoji": "🌼",
+    "label": "꽃",
+    "src": "assets/icons/daisy.webp"
+  },
+  {
+    "name": "herb",
+    "emoji": "🌿",
+    "label": "잎",
+    "src": "assets/icons/herb.webp"
+  },
+  {
+    "name": "sprout",
+    "emoji": "🌱",
+    "label": "새싹",
+    "src": "assets/icons/sprout.webp"
+  },
+  {
+    "name": "sun",
+    "emoji": "☀",
+    "label": "해",
+    "src": "assets/icons/sun.webp"
+  },
+  {
+    "name": "butterfly",
+    "emoji": "🦋",
+    "label": "나비",
+    "src": "assets/icons/butterfly.webp"
+  },
+  {
+    "name": "snail",
+    "emoji": "🐌",
+    "label": "달팽이",
+    "src": "assets/icons/snail.webp"
+  },
+  {
+    "name": "rabbit",
+    "emoji": "🐇",
+    "label": "토끼",
+    "src": "assets/icons/rabbit.webp"
+  },
+  {
+    "name": "frog",
+    "emoji": "🐸",
+    "label": "개구리",
+    "src": "assets/icons/frog.webp"
+  },
+  {
+    "name": "grasshopper",
+    "emoji": "🦗",
+    "label": "메뚜기",
+    "src": "assets/icons/grasshopper.webp"
+  },
+  {
+    "name": "turtle",
+    "emoji": "🐢",
+    "label": "거북이",
+    "src": "assets/icons/turtle.webp"
+  },
+  {
+    "name": "dog",
+    "emoji": "🐕",
+    "label": "강아지",
+    "src": "assets/icons/dog.webp"
+  },
+  {
+    "name": "cat",
+    "emoji": "🐈",
+    "label": "고양이",
+    "src": "assets/icons/cat.webp"
+  },
+  {
+    "name": "squirrel",
+    "emoji": "🐿️",
+    "label": "다람쥐",
+    "src": "assets/icons/squirrel.webp"
+  },
+  {
+    "name": "horse",
+    "emoji": "🐎",
+    "label": "말",
+    "src": "assets/icons/horse.webp"
+  },
+  {
+    "name": "kangaroo",
+    "emoji": "🦘",
+    "label": "캥거루",
+    "src": "assets/icons/kangaroo.webp"
+  },
+  {
+    "name": "chick",
+    "emoji": "🐥",
+    "label": "병아리",
+    "src": "assets/icons/chick.webp"
+  },
+  {
+    "name": "duck",
+    "emoji": "🦆",
+    "label": "오리",
+    "src": "assets/icons/duck.webp"
+  },
+  {
+    "name": "penguin",
+    "emoji": "🐧",
+    "label": "펭귄",
+    "src": "assets/icons/penguin.webp"
+  },
+  {
+    "name": "robot",
+    "emoji": "🤖",
+    "label": "로봇",
+    "src": "assets/icons/robot.webp"
+  },
+  {
+    "name": "car",
+    "emoji": "🚗",
+    "label": "자동차",
+    "src": "assets/icons/car.webp"
+  },
+  {
+    "name": "race-car",
+    "emoji": "🏎️",
+    "label": "장난감 자동차",
+    "src": "assets/icons/race-car.webp"
+  },
+  {
+    "name": "train",
+    "emoji": "🚂",
+    "label": "기차",
+    "src": "assets/icons/train.webp"
+  },
+  {
+    "name": "bus",
+    "emoji": "🚌",
+    "label": "버스",
+    "src": "assets/icons/bus.webp"
+  },
+  {
+    "name": "bicycle",
+    "emoji": "🚲",
+    "label": "자전거",
+    "src": "assets/icons/bicycle.webp"
+  },
+  {
+    "name": "soccer-ball",
+    "emoji": "⚽",
+    "label": "공",
+    "src": "assets/icons/soccer-ball.webp"
+  },
+  {
+    "name": "candy",
+    "emoji": "🍬",
+    "label": "사탕",
+    "src": "assets/icons/candy.webp"
+  },
+  {
+    "name": "apple",
+    "emoji": "🍎",
+    "label": "사과",
+    "src": "assets/icons/apple.webp"
+  },
+  {
+    "name": "pencil",
+    "emoji": "✏️",
+    "label": "연필",
+    "src": "assets/icons/pencil.webp"
+  },
+  {
+    "name": "strawberry",
+    "emoji": "🍓",
+    "label": "딸기",
+    "src": "assets/icons/strawberry.webp"
+  },
+  {
+    "name": "star",
+    "emoji": "⭐",
+    "label": "별",
+    "src": "assets/icons/star.webp"
+  },
+  {
+    "name": "orange",
+    "emoji": "🍊",
+    "label": "귤",
+    "src": "assets/icons/orange.webp"
+  },
+  {
+    "name": "teddy-bear",
+    "emoji": "🧸",
+    "label": "곰 인형",
+    "src": "assets/icons/teddy-bear.webp"
+  },
+  {
+    "name": "red-counter",
+    "emoji": "🔴",
+    "label": "빨간 구슬",
+    "src": "assets/icons/red-counter.webp"
+  },
+  {
+    "name": "blue-counter",
+    "emoji": "🔵",
+    "label": "파란 구슬",
+    "src": "assets/icons/blue-counter.webp"
+  }
+]
