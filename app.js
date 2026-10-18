@@ -179,6 +179,7 @@ function refreshCurrentScreen(){
   if(!authenticated){login();window.scrollTo(0,y);return;}
   if(screen==='hub'){hub();window.scrollTo(0,y);return;}
   if(screen==='dictation'){dictationController?.refresh();return;}
+  if(screen==='times')return; // Keep current input, picture and practice progress.
   if(screen==='quiz'&&qs.length){answers[pos]=readAnswer();render();}
   else if(screen==='result')result();
   else{const prefs={dan:document.querySelector('#dan')?.value,count:document.querySelector('#count')?.value,type:document.querySelector('#type')?.value};home();for(const [id,value] of Object.entries(prefs))if(value!==undefined)document.querySelector(`#${id}`).value=value;}
