@@ -18,7 +18,7 @@ function make(saved=data){
  sessionStorage:{getItem:k=>session.get(k)??null,setItem:(k,v)=>session.set(k,v),removeItem:k=>session.delete(k)},
  document:{body:{dataset:{}},querySelector:s=>s==='#app'?app:get(s),querySelectorAll:()=>[]},
  window:{scrollY:0,scrollTo(){},matchMedia:()=>({matches:reduced}),GardenDictation:{mount:()=>({destroy(){},refresh(){},hasDraft:()=>false})}},confirm:()=>true,setTimeout:timeout,clearTimeout:clear});
- for(const file of ['moods.js','study.js','questions.js','app.js']){
+ for(const file of ['moods.js','flowers.js','study.js','questions.js','app.js']){
   let source=fs.readFileSync(root+'/'+file,'utf8');if(file==='app.js')source=source.replace('installPullToRefresh();authenticated?hub():login();','');vm.runInContext(source,ctx);
  }
  return {ctx,api:ctx.window.GardenMood,app,get,buttons:()=>buttons,welcome:()=>welcome,setReduced:v=>reduced=v,tick,pending:()=>jobs.size};
@@ -41,7 +41,7 @@ assert(f.buttons().every(b=>!b.disabled));assert.equal(f.get('#garden-enter').di
 f.get('#garden-code').value='0000';f.get('#login-form').onsubmit({preventDefault(){}});
 assert.equal(randomCalls,1);assert.equal(vm.runInContext('authenticated',f.ctx),false);
 f.get('#garden-code').value='0619';f.get('#login-form').onsubmit({preventDefault(){}});
-const afterAdmission=randomCalls;assert.equal(afterAdmission,14);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
+const afterAdmission=randomCalls;assert.equal(afterAdmission,15);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
 assert.equal(f.welcome().src,'assets/moods/determined.webp');assert(!f.app.innerHTML.includes('class="study-sprouts"'));
 const hubCaption=f.app.innerHTML.match(/<figcaption>(.*?)<\/figcaption>/)[1];assert(hubCaption.length>0);
 vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,afterAdmission);assert(f.app.innerHTML.includes('<figcaption>'+hubCaption+'</figcaption>'));assert.equal(mood.current().key,'determined');

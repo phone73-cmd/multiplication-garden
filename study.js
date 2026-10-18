@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v1.8.20 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.21 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -85,7 +85,7 @@ function hub(){
   const stats=readStudyValue('dictation-stats',{}),rows=stats&&typeof stats==='object'?Object.values(stats):[];
   const expressions=getHubExpressions();
   const runs=rows.reduce((sum,r)=>sum+(Number.isFinite(r?.runs)?r.runs:0),0);
-  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><div class="welcome-heading"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1></div><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><div class="subject-shell"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span class="subject-equation-placeholder"></span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('times')}</div><div class="subject-shell"><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span class="subject-equation-placeholder"></span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('math')}</div><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
+  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><div class="welcome-heading"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1>${window.GardenFlowers?.markup()||''}</div><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><div class="subject-shell"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span class="subject-equation-placeholder"></span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('times')}</div><div class="subject-shell"><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span class="subject-equation-placeholder"></span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('math')}</div><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
   window.GardenMood?.bindWelcome(app);
   bindHubEquation('times');bindHubEquation('math');
   document.querySelector('#open-math').onclick=()=>requestStudyRoute('math-home',home);
@@ -113,14 +113,16 @@ function reviewGroups(states){
   const cards=list=>list.map(x=>reviewCard(x.q,x.i,x.state)).join('');
   return `${pending.length||written.length?`<section class="panel review-writing"><h2>서술형 확인하기 · ${pending.length}개 남았어요</h2>${cards(pending)}${written.length?`<details><summary>확인한 서술형 ${written.length}문제</summary>${cards(written)}</details>`:''}</section>`:''}${wrong.length?`<section class="panel review-wrong"><h2>틀린 문제 다시 보기 · ${wrong.length}문제</h2>${cards(wrong)}</section>`:''}${good.length?`<details class="panel review-correct"><summary>맞힌 문제 ${good.length}개 보기</summary>${cards(good)}</details>`:''}`;
 }
-const studyBackupKeys=['garden-mood','garden-times-facts','garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
+const studyBackupKeys=['garden-welcome-flower','garden-mood','garden-times-facts','garden-times-history','garden-appearance','garden-history','dictation-settings','dictation-items','dictation-best','dictation-wrong','dictation-stats'];
 function validStudyBackup(text){
   const obj=JSON.parse(text);
   if(!obj||obj.app!=='liah-learning-garden'||obj.format!==1||!obj.data||typeof obj.data!=='object'||Array.isArray(obj.data))throw Error('배움정원에서 내보낸 파일을 골라 주세요.');
   const data={};
   for(const [key,value]of Object.entries(obj.data)){
     if(!studyBackupKeys.includes(key))throw Error('알 수 없는 저장 항목이 있어요.');
-    if(key==='garden-times-facts'){
+    if(key==='garden-welcome-flower'){
+      if(!value||typeof value!=='object'||Array.isArray(value)||!["daisy", "cosmos", "cherry-blossom", "plum-blossom", "rose", "peony", "carnation", "hydrangea", "tulip", "sunflower", "daffodil", "morning-glory", "violet", "pansy", "lily-of-the-valley", "forget-me-not"].includes(value.current))throw Error('오늘의 꽃 선택을 확인해 주세요.');
+    }else if(key==='garden-times-facts'){
       if(!TimesEngine.validFacts(value))throw Error('구구단 오답 기록을 확인해 주세요.');
     }else if(key==='garden-times-history'){
       if(!TimesEngine.validHistory(value))throw Error('구구단 기록을 확인해 주세요.');
@@ -154,9 +156,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.20',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.21',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.20-backup.json';
+  const filename='learning-garden-v1.8.21-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -182,7 +184,7 @@ function applyStudyBackup(data){
   catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch{}}throw e;}
   if(data['garden-history'])history=data['garden-history'];
   hubExpressions=null;
-  window.GardenAppearance?.reload();window.GardenMood?.reload();
+  window.GardenAppearance?.reload();window.GardenMood?.reload();window.GardenFlowers?.reload();
 }
 async function importStudyFile(event){
   const file=event.target.files[0];event.target.value='';if(!file)return;

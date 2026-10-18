@@ -72,7 +72,7 @@ function login(){
   document.querySelector('#login-form').onsubmit=e=>{
     e.preventDefault();if(window.GardenMood?.drawing())return;const input=document.querySelector('#garden-code');
     if(input.value!=='0619'){document.querySelector('#login-notice').textContent='비밀번호를 다시 확인해 주세요.';input.value='';input.focus();return;}
-    window.GardenMood?.enter();
+    window.GardenMood?.enter();window.GardenFlowers?.enter();
     authenticated=true;try{sessionStorage.setItem('garden-authenticated','yes');}catch{}input.value='';hub();window.scrollTo(0,0);
   };
 }
