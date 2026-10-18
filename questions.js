@@ -158,11 +158,11 @@ var GardenQuestions = (() => {
       q.hint=`${a}의 ${b}배는 ${a}씩 ${b}묶음입니다. ${a} × ${b} = ${a*b}이므로 파란 구슬은 ${a*b}개입니다.`;
     }
     if(t===15){
-      q.text='잘못된 계산을 보고 바른 곱을 써 보세요.';
+      q.text='아래 풀이는 틀렸어요. 바른 곱을 써 보세요.';
       const sum=a+b;q.errorType=(q.variant===0||b===2)&&sum!==a*b?'add':'groups';
       const wrongSum=Array(b-1).fill(a).join(' + ');
       q.wrongEquation=q.errorType==='add'?`${a} × ${b} = ${a} + ${b} = ${sum}`:b===2?`${a} × ${b} = ${a}`:`${a} × ${b} = ${wrongSum} = ${a*(b-1)}`;
-      q.visual=`<div class="error-equation">${esc(q.wrongEquation)}</div>`;q.fields=[field('바르게 구한 곱',a*b)];q.hint=`${q.errorType==='add'?'두 수를 한 번씩 더한 계산입니다.':`${a}${josa(a,'을/를')} ${b-1}번만 더한 계산입니다.`} ${a} × ${b}${subjectJosa(b)} ${a}씩 ${b}번 더하는 뜻입니다. ${a} × ${b} = ${Array(b).fill(a).join(' + ')} = ${a*b}입니다.`;
+      q.visual=`<div class="error-equation"><span class="error-label">잘못된 풀이</span><div>${esc(q.wrongEquation)}</div></div>`;q.fields=[field('바르게 구한 곱',a*b)];q.hint=`${q.errorType==='add'?'두 수를 한 번씩 더한 계산입니다.':`${a}${josa(a,'을/를')} ${b-1}번만 더한 계산입니다.`} ${a} × ${b}${subjectJosa(b)} ${a}씩 ${b}번 더하는 뜻입니다. ${a} × ${b} = ${Array(b).fill(a).join(' + ')} = ${a*b}입니다.`;
     }
     if(t===16){
       q.text=`${a} × ${b-1} = ${a*(b-1)}${josa(a*(b-1),'을/를')} 이용하여 ${a} × ${b}${josa(b,'을/를')} 구하는 방법을 설명하세요.`;q.fields=[field('곱',a*b)];

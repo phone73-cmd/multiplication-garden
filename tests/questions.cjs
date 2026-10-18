@@ -33,7 +33,7 @@ for(const dan of ['all','2','3','4','5','6','7','8','9'])for(let t=0;t<19;t++)fo
  if(t===11){const possible=[];for(let n=0;n<=9;n++)if(q.missingSide===0?n*b===a*b:a*n===a*b)possible.push(n);assert.equal(possible.length,1);assert.equal(possible[0],q.fields[0].value);}
  if(t===12){assert.equal(q.table.rows.length,4);assert.equal(q.table.cols.length,4);assert.equal(q.table.blanks.length,3);assert.equal(new Set(q.table.blanks.map(p=>p.ri+','+p.ci)).size,3);q.table.blanks.forEach((p,j)=>assert.equal(q.fields[j].value,q.table.rows[p.ri]*q.table.cols[p.ci]));}
  if(t===13){const c=q.compare,left=c.a*c.b,right=c.x*c.y;assert.equal(q.options[+q.expected[0]].text,left<right?'<':left>right?'>':'=');}
- if(t===15)assert.notEqual(+q.wrongEquation.split('=').at(-1).trim(),a*b);
+ if(t===15){assert.notEqual(+q.wrongEquation.split('=').at(-1).trim(),a*b);assert(q.text.includes('아래 풀이는 틀렸어요.'));assert(q.visual.includes('class="error-label">잘못된 풀이'));}
  if(t===18){const actual=q.options.filter(o=>o.ok).map(o=>o.factors.join('*')).sort();const oracle=[];for(let x=1;x<=9;x++)for(let y=1;y<=9;y++)if(x*y===a*b)oracle.push(x+'*'+y);assert.equal(actual.join(','),oracle.sort().join(','));}
  assert(!q.hint.includes('을/를'));assert(!/[\u3040-\u30ff]/.test(q.hint));
 }
