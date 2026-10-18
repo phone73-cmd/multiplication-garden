@@ -98,3 +98,9 @@ assert.equal(cancelFixture.buttons().filter(b=>b.attrs['aria-pressed']==='true')
 assert.equal(cancelFixture.buttons().find(b=>b.attrs['aria-pressed']==='true').dataset.mood,'sad');
 assert.equal(cancelFixture.pending(),0);assert(cancelFixture.buttons().every(b=>!b.disabled&&!b.classList.values.has('is-drawing')));
 console.log('Random mood draw: prior selection hidden during every animation tick, exactly one moving highlight, winner-only final selection, cancellation restores previous mood and clears timers passed.');
+
+const encouragementSource=fs.readFileSync(root+'/moods.js','utf8');
+const encouragements=JSON.parse(encouragementSource.match(/const encouragement=(\{[\s\S]*?\});/)[1]);
+assert.equal(Object.keys(encouragements).length,8);
+for(const phrases of Object.values(encouragements)){assert.equal(phrases.length,10);assert.equal(new Set(phrases).size,10);for(const text of phrases)assert([...text].length<=14,text);}
+console.log('Encouragement copy: all 80 phrases are 14 characters or fewer including spaces and punctuation.');

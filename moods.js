@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.16: a remembered mood, resolved by the visible draw before admission. */
+/* 배움정원 v1.8.17: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
@@ -101,7 +101,7 @@ window.GardenMood=(()=>{
   ],
   "thinking": [
     "천천히 생각해 봐.",
-    "곰곰이 생각하는 너, 멋져!",
+    "생각하는 네가 참 멋져!",
     "어떤 생각을 하고 있어?",
     "서두르지 않아도 괜찮아.",
     "함께 생각해 볼까?",
@@ -109,7 +109,7 @@ window.GardenMood=(()=>{
     "다른 방법도 있을까?",
     "네 생각이 궁금해!",
     "하나씩 살펴보자.",
-    "아하! 하는 순간이 올 거야."
+    "아하! 곧 알게 될 거야."
   ],
   "sad": [
     "속상해도 괜찮아.",
@@ -132,7 +132,7 @@ window.GardenMood=(()=>{
     "하나씩 해보면 돼!",
     "어려우면 도움을 청해 봐.",
     "작은 노력도 소중해.",
-    "다시 해보려는 마음, 멋져!",
+    "다시 해보는 마음, 멋져!",
     "우리 함께 해보자!"
   ],
   "sleepy": [
