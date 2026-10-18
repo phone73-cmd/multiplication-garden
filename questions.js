@@ -53,7 +53,7 @@ var GardenQuestions = (() => {
     const a=preset.a??(dan==='all'?rand(2,9):+dan),b=preset.b??rand(2,9);
     const q={t,a,b,kind:'fields',fields:[],visual:'',text:'',hint:'',variant:preset.variant??rand(0,t===10?3:2)};
     if(t===0||t===8){
-      const item=pick(pictureItems);q.visual=groupPicture(a,b,item);
+      const item=window.GardenPictures?window.GardenPictures.choose('groups',preset.avoidPicture):pick(pictureItems);q.pictureItem=item;q.visual=groupPicture(a,b,item);
       q.ordered=t===8&&q.variant!==2;
       q.text=t===0?'그림을 보고 덧셈식과 곱셈식을 완성해 보세요.':q.ordered?'한 묶음의 수 × 묶음 수 = 전체 수가 되도록 빈칸을 채우세요.':'그림에 맞는 곱셈식을 완성해 보세요. 두 수의 순서를 바꾸어도 좋아요.';
       q.fields=t===0?[field('덧셈의 합',a*b),field('곱',a*b)]:[field('한 묶음의 수',a),field('묶음 수',b),field('전체 수',a*b)];
@@ -71,7 +71,7 @@ var GardenQuestions = (() => {
       q.hint=`${a}씩 ${b}번 더하면 ${a*b}입니다. ${a} × ${q.prev} = ${a*q.prev}에서 ${a}씩 ${b-q.prev}묶음인 ${added}만큼 더하면 ${a*b}입니다.`;
     }
     if(t===3){
-      q.kind='multi';const item=pick(pictureItems);q.text=`그림에 있는 ${item[0]}의 전체 개수를 구하는 바른 방법을 모두 고르세요.`;q.visual=arrayPicture(a,b,item);
+      q.kind='multi';const item=window.GardenPictures?window.GardenPictures.choose('dense',preset.avoidPicture):pick(pictureItems);q.pictureItem=item;q.text=`그림에 있는 ${item[0]}의 전체 개수를 구하는 바른 방법을 모두 고르세요.`;q.visual=arrayPicture(a,b,item);
       const candidates=[
         {text:`${a}씩 ${b}번 더해서 구합니다.`,value:a*b},
         {text:`${b}씩 ${a}번 더해서 구합니다.`,value:a*b},

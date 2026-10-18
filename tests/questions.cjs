@@ -2,6 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{},session=new Map();
 const context=vm.createContext({console,Date,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:()=>null,setItem:noop},sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,value)=>session.set(key,value),removeItem:key=>session.delete(key)},document:{querySelector:()=>({}),querySelectorAll:()=>[]},window:{scrollY:0,scrollTo:noop,GardenDictation:{mount:()=>({destroy:noop,refresh:noop,hasDraft:()=>false})}},confirm:()=>true,setTimeout:noop});
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),context);
+vm.runInContext(fs.readFileSync(__dirname+'/../pictures.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../questions.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('installPullToRefresh();authenticated?hub():login();',''),context);
 const api=vm.runInContext('({makeQuestion,expected,correct,buildAssessment,typePlan,controls,describe,answerState,tableMarkup,render,result,readAnswer,refreshCurrentScreen,names,lifeScenes,wordScenes,GardenQuestions})',context);

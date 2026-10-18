@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.23: picture learning and untimed practice. */
+/* 구구단 연습 v1.8.24: picture learning and untimed practice. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -37,13 +37,14 @@ const TimesGarden={
     const count=document.querySelector('#times-count');if(count)count.onchange=()=>{this.count=Number(count.value);if(this.mode==='weak')this.home();};
     document.querySelector('#times-start').onclick=()=>{
       if(!this.dans.length)return;
-      if(this.mode==='learn'){this.b=1;this.revealed=false;this.highlight=0;this.learn();}
+      if(this.mode==='learn'){this.learnFruit=window.GardenPictures?.choose('fruits',this.learnFruit);this.b=1;this.revealed=false;this.highlight=0;this.learn();}
       else if(this.mode==='weak'){try{const queue=TimesEngine.weakQueue(TimesEngine.readFacts(),this.dans,this.count);if(queue.length)this.start(queue);}catch{this.home();}}
       else this.start(TimesEngine.makeQueue(this.dans,this.count,this.mode==='ordered'));
     };
   },
   picture(a,b,interactive=false,highlight=0){
-    return `<div class="times-picture ${a>=8?'times-dots':''}" role="group" aria-label="${a}개씩 ${b}묶음">${Array.from({length:b},(_,i)=>`<${interactive?'button':'div'} ${interactive?`type="button" data-group="${i+1}" aria-pressed="${i<highlight}"`:''} class="times-group ${i<highlight?'lit':''}" aria-label="${i+1}번째 묶음, ${a}개"><span class="times-objects" style="--objects:${a}" aria-hidden="true">${Array.from({length:a},()=>a>=8?'<i></i>':'<span>🍎</span>').join('')}</span><small>${i+1}묶음</small></${interactive?'button':'div'}>`).join('')}</div>`;
+    const item=this.learnFruit||(this.helpFruit??=window.GardenPictures?.choose('fruits'));
+    return `<div class="times-picture ${a>=6?'times-dense':''}" role="group" aria-label="${item?item[0]:'사과'} ${a}개씩 ${b}묶음">${Array.from({length:b},(_,i)=>`<${interactive?'button':'div'} ${interactive?`type="button" data-group="${i+1}" aria-pressed="${i<highlight}"`:''} class="times-group ${i<highlight?'lit':''}" aria-label="${i+1}번째 묶음, ${a}개"><span class="times-objects" style="--objects:${a}" aria-hidden="true">${Array.from({length:a},()=>item?window.GardenPictures.object(item):'<span>🍎</span>').join('')}</span><small>${i+1}묶음</small></${interactive?'button':'div'}>`).join('')}</div>`;
   },
   bindHome(){document.querySelector('#times-home').onclick=()=>{if(window.GardenNav?.request)return window.GardenNav.request('times-home');this.home();};},
   learn(){

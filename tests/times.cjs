@@ -1,6 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const nodes=new Map(),data=new Map(),timers=new Map();let timerId=0;const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',hidden:false,disabled:false,textContent:'',innerHTML:'',classList:{toggle(){}},setAttribute(){}});return nodes.get(s);};
 const ctx=vm.createContext({console,Math,Date,localStorage:{getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},document:{querySelector:get,querySelectorAll:()=>[],body:{dataset:{}}},window:{scrollTo(){}},setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),confirm:()=>true});
+vm.runInContext(fs.readFileSync(__dirname+'/../pictures.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../times.js','utf8')+'\nlet screen="times",authenticated=true;const app={innerHTML:""};function stopDictation(){};function login(){};',ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../study.js','utf8'),ctx);
 const {engine,garden}=vm.runInContext('({engine:TimesEngine,garden:TimesGarden})',ctx);
@@ -14,7 +15,7 @@ for(let mask=1;mask<256;mask++)for(const count of [10,20,30])for(let rep=0;rep<5
 }
 for(let a=2;a<=9;a++){
  assert.equal(engine.makeQueue([a],10,true).map(q=>q.b).join(','),'1,2,3,4,5,6,7,8,9');
- for(let b=1;b<=9;b++){const html=garden.picture(a,b);assert.equal((html.match(/class="times-group /g)||[]).length,b);assert.equal((html.match(a>=8?/<i><\/i>/g:/<span>🍎<\/span>/g)||[]).length,a*b);assert(engine.check({a,b},String(a*b)));assert(!engine.check({a,b},''));}
+ for(let b=1;b<=9;b++){const html=garden.picture(a,b);assert.equal((html.match(/class="times-group /g)||[]).length,b);assert.equal((html.match(/class="picture-asset"/g)||[]).length,a*b);assert(engine.check({a,b},String(a*b)));assert(!engine.check({a,b},''));}
 }
 garden.start([{a:3,b:4},{a:5,b:6},{a:8,b:9}]);
 const answer=get('#times-answer');answer.value='';garden.submit();assert.equal(garden.tries,0);

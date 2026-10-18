@@ -11,10 +11,10 @@ const field=(label,value)=>({label,value});
 const lifeScenes=[
 ['달팽이','🐌','cm','움직인'],['토끼','🐇','m','뛰어간'],['자동차','🚗','m','이동한'],['개구리','🐸','cm','뛰어간'],['메뚜기','🦗','cm','뛰어간'],['거북이','🐢','cm','걸어간'],['강아지','🐕','m','걸어간'],['고양이','🐈','m','걸어간'],['다람쥐','🐿️','m','뛰어간'],['말','🐎','m','달려간'],['캥거루','🦘','m','뛰어간'],['병아리','🐥','cm','걸어간'],['오리','🦆','m','걸어간'],['펭귄','🐧','m','걸어간'],['로봇','🤖','cm','이동한'],['장난감 자동차','🏎️','cm','이동한'],['기차','🚂','m','이동한'],['버스','🚌','m','이동한'],['자전거','🚲','m','이동한'],['공','⚽','cm','굴러간']
 ];
-function movementPicture(a,b,scene,hideStep=false){const w=b*84+48,y=114;const segments=Array.from({length:b},(_,i)=>{const x=24+i*84;return `<g class="movement-segment"><path d="M ${x} ${y} Q ${x+42} 18 ${x+84} ${y}" fill="none" stroke="#7ca7ab" stroke-width="2.5" stroke-dasharray="4 4"/><text x="${x+42}" y="49" text-anchor="middle" font-size="19" fill="var(--ink)">${hideStep?"?":a}${scene[2]}</text></g>`}).join('');return `<div class="movement-scroll" tabindex="0" role="img" aria-label="${scene[0]}의 이동 그림. 한 구간 ${hideStep?"알맞은 거리":a+scene[2]}. 출발부터 도착까지 그려진 같은 길이의 구간을 세어 보세요."><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 187" style="min-width:${Math.max(280,b*60+36)}px" aria-hidden="true"><rect x="24" y="${y}" width="${b*84}" height="15" rx="3" fill="#b7c594"/>${segments}${Array.from({length:b+1},(_,i)=>`<path d="M ${24+i*84} 108 v21" stroke="#7c956b" stroke-width="2"/>`).join('')}<text x="24" y="160" text-anchor="middle" font-size="28">${scene[1]}</text><text x="${w-24}" y="160" text-anchor="middle" font-size="28">${scene[1]}</text><text x="24" y="182" text-anchor="middle" font-size="12" fill="var(--muted)">출발</text><text x="${w-24}" y="182" text-anchor="middle" font-size="12" fill="var(--muted)">도착</text></svg></div><p class="muted" style="text-align:center">그림의 구간을 세어 보세요. 길면 좌우로 밀어서 끝까지 보세요.</p>`}
+function movementPicture(a,b,scene,hideStep=false){const w=b*84+48,y=114;const segments=Array.from({length:b},(_,i)=>{const x=24+i*84;return `<g class="movement-segment"><path d="M ${x} ${y} Q ${x+42} 18 ${x+84} ${y}" fill="none" stroke="#7ca7ab" stroke-width="2.5" stroke-dasharray="4 4"/><text x="${x+42}" y="49" text-anchor="middle" font-size="19" fill="var(--ink)">${hideStep?"?":a}${scene[2]}</text></g>`}).join('');return `<div class="movement-scroll" tabindex="0" role="img" aria-label="${scene[0]}의 이동 그림. 한 구간 ${hideStep?"알맞은 거리":a+scene[2]}. 출발부터 도착까지 그려진 같은 길이의 구간을 세어 보세요."><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 187" style="min-width:${Math.max(280,b*60+36)}px" aria-hidden="true"><rect x="24" y="${y}" width="${b*84}" height="15" rx="3" fill="#b7c594"/>${segments}${Array.from({length:b+1},(_,i)=>`<path d="M ${24+i*84} 108 v21" stroke="#7c956b" stroke-width="2"/>`).join('')}${window.GardenPictures?window.GardenPictures.moving(scene,24):`<text x="24" y="160" text-anchor="middle" font-size="28">${scene[1]}</text>`}${window.GardenPictures?window.GardenPictures.moving(scene,w-24):`<text x="${w-24}" y="160" text-anchor="middle" font-size="28">${scene[1]}</text>`}<text x="24" y="182" text-anchor="middle" font-size="12" fill="var(--muted)">출발</text><text x="${w-24}" y="182" text-anchor="middle" font-size="12" fill="var(--muted)">도착</text></svg></div><p class="muted" style="text-align:center">그림의 구간을 세어 보세요. 길면 좌우로 밀어서 끝까지 보세요.</p>`}
 const pictureItems=[['꽃','🌷'],['사탕','🍬'],['사과','🍎'],['공','⚽'],['연필','✏️'],['장난감 자동차','🚗'],['딸기','🍓'],['별','⭐'],['귤','🍊'],['곰 인형','🧸']];
-function groupPicture(a,b,item){return `<div class="count-groups" role="img" aria-label="${item[0]} ${a}개씩 ${b}묶음">${Array.from({length:b},()=>`<div class="count-group">${Array(a).fill(`<span class="count-item" aria-hidden="true">${item[1]}</span>`).join('')}</div>`).join('')}</div>`}
-function arrayPicture(a,b,item){return `<div class="array-picture" role="img" aria-label="${item[0]} 배열 그림, 한 줄에 ${b}개씩 ${a}줄"><div class="count-array" style="grid-template-columns:repeat(${b},minmax(0,1fr))">${Array.from({length:a*b},()=>`<span class="array-item" aria-hidden="true">${item[1]}</span>`).join('')}</div></div>`}
+function groupPicture(a,b,item){return `<div class="count-groups" role="img" aria-label="${item[0]} ${a}개씩 ${b}묶음">${Array.from({length:b},()=>`<div class="count-group">${Array(a).fill(`<span class="count-item" aria-hidden="true">${window.GardenPictures?window.GardenPictures.object(item):item[1]}</span>`).join('')}</div>`).join('')}</div>`}
+function arrayPicture(a,b,item){return `<div class="array-picture" role="img" aria-label="${item[0]} 배열 그림, 한 줄에 ${b}개씩 ${a}줄"><div class="count-array" style="grid-template-columns:repeat(${b},minmax(0,1fr))">${Array.from({length:a*b},()=>`<span class="array-item" aria-hidden="true">${window.GardenPictures?window.GardenPictures.object(item):item[1]}</span>`).join('')}</div></div>`}
 const wordScenes=[
 {unit:'명',text:(a,b)=>`공원에 ${a}명이 앉을 수 있는 긴 의자가 ${b}개 있습니다. 모두 몇 명이 앉을 수 있는지 곱셈식을 이용하여 구해 보세요.`},
 {unit:'개',text:(a,b)=>`사탕이 한 봉지에 ${a}개씩 들어 있습니다. ${b}봉지에 들어 있는 사탕은 모두 몇 개인지 곱셈식을 이용하여 구해 보세요.`},
@@ -113,7 +113,7 @@ function typePlan(n){
 }
 function questionKey(q){const numbers=q.t===10?q.zeroOne:q.t===5?q.condition:q.t===6?q.pairs:q.t===12?q.table:[q.a,q.b,q.small,q.prev,q.moveMode,q.missingSide];return JSON.stringify([q.t,numbers,q.text,q.visual,q.fields,q.options,q.ordered]);}
 function buildAssessment(dan,n,t){
-  const types=t==='mix'?typePlan(n):Array(n).fill(+t),seen=new Set(),lifeOrder=shuffle(lifeScenes.map((_,i)=>i)),decks=new Map(),variants=new Map();let lifeCount=0;
+  const types=t==='mix'?typePlan(n):Array(n).fill(+t),seen=new Set(),lifeOrder=shuffle(lifeScenes.map((_,i)=>i)),decks=new Map(),variants=new Map();let lifeCount=0,lastPicture=null;
   const drawPair=type=>{let deck=decks.get(type);if(!deck||!deck.length){const aa=shuffle([2,3,4,5,6,7,8,9]),bb=shuffle([2,3,4,5,6,7,8,9]);deck=bb.map((b,i)=>({a:dan==='all'?aa[i]:+dan,b}));decks.set(type,deck);}return deck.shift();};
   return types.map((type,i)=>{
     const scene=type===7?lifeOrder[lifeCount++%lifeOrder.length]:null;
@@ -121,9 +121,10 @@ function buildAssessment(dan,n,t){
     // Keep each eight-question cycle balanced; retry only the presentation of that pair.
     const pair=drawPair(type);let q,best;
     for(let tries=0;tries<40;tries++){
-      q=makeQuestion(type,dan,scene,{...pair,variant:(count+tries)%(type===10?4:3)});best=q;
+      q=makeQuestion(type,dan,scene,{...pair,avoidPicture:lastPicture,variant:(count+tries)%(type===10?4:3)});best=q;
       if(!seen.has(questionKey(q)))break;
     }
+    if(best.pictureItem)lastPicture=best.pictureItem;
     seen.add(questionKey(best));best.id=`q${i}`;return best;
   });
 }
