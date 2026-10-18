@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.28: choose a new flower only on successful admission. */
+/* 배움정원 v1.8.29: choose a new flower only on successful admission. */
 window.GardenFlowers=(()=>{
   const items=[
   {
@@ -85,10 +85,15 @@ window.GardenFlowers=(()=>{
   const storageKey='garden-welcome-flower';
   const valid=value=>!!value&&typeof value==='object'&&!Array.isArray(value)&&items.some(item=>item.key===value.current);
   function read(){try{const saved=JSON.parse(localStorage.getItem(storageKey));return valid(saved)?{current:saved.current}:null;}catch{return null;}}
-  let state=read();
+  let state=read(),loginPair=null;
   function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}}
-  function enter(){const choices=items.filter(item=>item.key!==state?.current);state={current:choices[Math.floor(Math.random()*choices.length)].key};save();return current();}
+  function enter(){loginPair=null;const choices=items.filter(item=>item.key!==state?.current);state={current:choices[Math.floor(Math.random()*choices.length)].key};save();return current();}
   function current(){if(!state)enter();return items.find(item=>item.key===state.current);}
   function markup(){const flower=current();return '<figure class="welcome-flower"><img src="'+flower.src+'" alt="'+flower.name+' 꽃" width="512" height="512" decoding="async"><figcaption>'+flower.name+'</figcaption></figure>';}
-  return {items,valid,enter,current,markup,get:()=>state?{...state}:null,reload(){state=read();}};
+  function loginMarkup(){
+    if(!loginPair){const first=items[Math.floor(Math.random()*items.length)],others=items.filter(item=>item.key!==first.key);loginPair=[first,others[Math.floor(Math.random()*others.length)]];}
+    const icon=flower=>`<img class="login-entry-flower" src="${flower.src}" alt="" aria-hidden="true" width="26" height="26" decoding="async" draggable="false">`;
+    return `${icon(loginPair[0])}<span>정원에 들어가기</span>${icon(loginPair[1])}`;
+  }
+  return {items,valid,loginMarkup,enter,current,markup,get:()=>state?{...state}:null,reload(){state=read();}};
 })();

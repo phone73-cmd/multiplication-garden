@@ -25,7 +25,7 @@ function make(saved=data){
 }
 const f=make();const mood=f.api;
 assert.equal(mood.items.length,8);assert.equal(mood.get().choice,'greeting');
-vm.runInContext('login()',f.ctx);assert.equal(f.buttons().length,9);assert.equal((f.app.innerHTML.match(/type="button" class="mood-choice"/g)||[]).length,9);
+vm.runInContext('login()',f.ctx);randomCalls=0;assert.equal(f.buttons().length,9);assert.equal((f.app.innerHTML.match(/type="button" class="mood-choice"/g)||[]).length,9);
 f.buttons().find(b=>b.dataset.mood==='greeting').onclick();assert.equal(f.buttons().filter(b=>b.attrs['aria-pressed']==='true').length,1);
 f.get('#garden-code').value='0619';f.buttons().find(b=>b.dataset.mood==='random').onclick();
 assert.equal(f.get('#garden-code').value,'0619');assert(mood.drawing());assert(f.buttons().every(b=>b.disabled));assert.equal(f.get('#garden-enter').disabled,true);

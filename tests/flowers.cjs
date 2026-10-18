@@ -15,3 +15,11 @@ for(const value of [{current:'bad'},[],null]){f.ctx.backupText=JSON.stringify({.
 const sw=fs.readFileSync(__dirname+'/../sw.js','utf8');assert(sw.includes("'./flowers.js'"));for(const item of api.items)assert(sw.includes(JSON.stringify('./'+item.src)));
 const unavailable=new Map();unavailable.set=()=>{throw Error('full');};const restricted=make(unavailable).ctx.window.GardenFlowers;const initial=restricted.enter();assert.notEqual(restricted.enter().key,initial.key);
 console.log('Flowers: 16 names/assets, successful-login-only draw, previous excluded, stable hub/refresh/reload, all flowers reachable, backup validation/restore, storage failure and offline assets passed.');
+
+const admission=new Set();for(let i=0;i<100;i++){
+ f.ctx.Math.random=()=>((i*37)%100)/100;
+ const copy=api.loginMarkup(),icons=[...copy.matchAll(/class="login-entry-flower" src="([^"]+)"/g)].map(m=>m[1]);
+ assert.equal(icons.length,2);assert.notEqual(icons[0],icons[1]);assert.equal(api.loginMarkup(),copy);icons.forEach(src=>admission.add(src));
+ api.enter();
+}
+assert(admission.size>2);console.log('Admission flowers: two distinct existing images, stable during login, randomized between visits, unchanged admission label passed.');

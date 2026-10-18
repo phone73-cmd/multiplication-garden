@@ -32,7 +32,7 @@ console.log('Timer: layout/modes/persistence, 5/10 seconds, exact !! copy, expir
 
 // The answer frame follows the same remaining time and stops on the same boundaries.
 const ring=fixture(),rg=ring.garden;rg.timeLimit=5;rg.start([{a:3,b:4},{a:2,b:3}]);
-assert(ring.markup().includes('class="times-answer-frame"'));assert(ring.markup().includes('pathLength="100"'));assert(!ring.get('#times-answer-timer').hidden);
+assert(ring.markup().includes('class="times-answer-frame"'));assert(!ring.markup().includes('pathLength='));assert(!ring.markup().includes('non-scaling-stroke'));assert(!ring.get('#times-answer-timer').hidden);
 assert.equal(+ring.get('#times-countdown-stroke').style.strokeDashoffset,0);ring.advance(2000);assert(Math.abs(+ring.get('#times-countdown-stroke').style.strokeDashoffset-40)<.001);assert.equal(ring.get('#times-feedback').textContent,'남은 시간 3초');
 ring.advance(3000);assert(ring.get('#times-answer-timer').hidden);assert.equal(ring.get('#times-feedback').textContent,'천천히 생각해도 괜찮아요!!');assert(!rg.done);
 ring.get('#times-answer').value='12';rg.submit();ring.advance(800);assert(!ring.get('#times-answer-timer').hidden);assert.equal(+ring.get('#times-countdown-stroke').style.strokeDashoffset,0);
@@ -40,3 +40,19 @@ ring.get('#times-answer').value='6';rg.submit();assert(ring.get('#times-answer-t
 const smooth=fixture(null,false,true),sg=smooth.garden;sg.timeLimit=10;sg.start([{a:7,b:8}]);assert.equal(smooth.animations.length,1);assert.equal(smooth.animations[0].options.duration,10000);assert.equal(smooth.animations[0].options.easing,'linear');smooth.advance(2100);sg.pauseClock();assert(smooth.animations[0].canceled);assert(Math.abs(+smooth.get('#times-countdown-stroke').style.strokeDashoffset-21)<.001);smooth.advance(40000);sg.resumeClock();assert.equal(smooth.animations[1].options.duration,7900);assert(Math.abs(+smooth.animations[1].frames[0].strokeDashoffset-21)<.001);smooth.advance(7900);assert(smooth.animations[1].canceled);assert(smooth.get('#times-answer-timer').hidden);
 const reduced=fixture(null,false,true,true);reduced.garden.timeLimit=5;reduced.garden.start([{a:2,b:2}]);assert.equal(reduced.animations.length,0);reduced.advance(5000);assert(reduced.get('#times-answer-timer').hidden);
 console.log('Answer frame: stable input wrapper, matching numerical countdown/progress, expiry/reset/answer/untimed visibility, smooth native animation pause/resume and reduced-motion fallback passed.');
+
+// Actual pixel perimeter is the dash length, at every input size. Even the first 250ms advances the line.
+for(const [width,height,length] of [[56,36,164],[90,60,280],[120,80,380]]){
+ const sized=fixture(null,false,true),gg=sized.garden,stroke=sized.get('#times-countdown-stroke'),attrs={};
+ sized.get('#times-answer-timer').getBoundingClientRect=()=>({width,height});
+ stroke.ownerSVGElement={setAttribute:(k,v)=>attrs[k]=v};stroke.setAttribute=(k,v)=>attrs[k]=v;stroke.getTotalLength=()=>length;
+ gg.timeLimit=10;gg.start([{a:7,b:8}]);assert.equal(gg.clockPathLength,length);assert.equal(stroke.style.strokeDasharray,length+' '+length);assert.equal(attrs.viewBox,'0 0 '+width+' '+height);assert.equal(+sized.animations[0].frames[1].strokeDashoffset,length);assert.equal(sized.animations[0].options.duration,10000);
+ sized.advance(250);gg.pauseClock();assert(Math.abs(+stroke.style.strokeDashoffset-length*.025)<.00001);
+ sized.advance(1000);gg.resumeClock();assert.equal(sized.animations[1].options.duration,9750);assert(Math.abs(+sized.animations[1].frames[0].strokeDashoffset-length*.025)<.00001);
+}
+console.log('Actual perimeter: 3 input sizes, pixel viewBox/path measurement, matched dash/offset, progress after 250ms and unchanged remaining time on resume passed.');
+
+const resize=fixture(null,false,true),rr=resize.garden;let resized,disconnected=0,width=60,length=180;
+resize.ctx.ResizeObserver=class{constructor(fn){resized=fn;}observe(){}disconnect(){disconnected++;}};
+resize.get('#times-answer-timer').getBoundingClientRect=()=>({width,height:40});const rp=resize.get('#times-countdown-stroke');rp.ownerSVGElement={setAttribute(){}};rp.getTotalLength=()=>length;rr.timeLimit=10;rr.start([{a:2,b:3}]);resize.advance(1000);width=90;length=240;resized();assert.equal(rr.remainingMs,9000);assert.equal(rr.clockPathLength,240);assert.equal(resize.animations.at(-1).options.duration,9000);assert(Math.abs(+resize.animations.at(-1).frames[0].strokeDashoffset-24)<.00001);rr.home();assert(disconnected>0);
+console.log('Resize: remeasurement preserves deadline, proportion and animation duration; leaving disconnects observer passed.');

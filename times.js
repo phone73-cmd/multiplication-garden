@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.28: picture learning and optional gentle per-question countdown. */
+/* 구구단 연습 v1.8.29: picture learning and optional gentle per-question countdown. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -27,7 +27,7 @@ const TimesGarden={
   active(){return screen==='times'&&this.phase==='quiz';},
   open(){if(!authenticated)return login();stopDictation();screen='times';setStudyScreen(screen);this.phase='home';this.home();window.scrollTo(0,0);},
   home(){
-    this.pauseClock();if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.phase='home';window.GardenNav?.sync('times-home');
+    this.clockResizeObserver?.disconnect();this.pauseClock();if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.phase='home';window.GardenNav?.sync('times-home');
     const mode=TimesModes.find(([key])=>key===this.mode)||TimesModes[0];
     const single=['learn','ordered'].includes(this.mode);if(single)this.dans=this.dans.slice(0,1);
     let weakCount=0,factError=false;const weakDans=new Set();try{const weak=TimesEngine.weakFacts(TimesEngine.readFacts(),[2,3,4,5,6,7,8,9]);weak.forEach(q=>weakDans.add(q.a));weakCount=weak.filter(q=>this.dans.includes(q.a)).length;}catch{factError=true;}
@@ -58,6 +58,7 @@ const TimesGarden={
   },
   bindHome(){document.querySelector('#times-home').onclick=()=>{if(window.GardenNav?.request)return window.GardenNav.request('times-home');this.home();};},
   learn(){
+    this.clockResizeObserver?.disconnect();
     this.phase='learn';window.GardenNav?.sync('times-learn');const a=this.dans[0],b=this.b;
     app.innerHTML=`<section class="panel times">${this.viewHeader(`${a}단 · 곱셈 익히기`)}<p>${a}개씩 ${b}묶음이에요.</p>${this.picture(a,b,true,this.highlight)}<p id="times-group-total" role="status">${this.highlight?`${a}개씩 ${this.highlight}묶음은 ${a*this.highlight}개예요.`:'묶음을 눌러 함께 세어 보세요.'}</p><p class="times-sum">${Array(b).fill(a).join(' + ')} = <button type="button" class="times-question" data-reveal aria-label="덧셈식 정답 ${this.revealed?'가리기':'보기'}">${this.revealed?a*b:'?'}</button></p><div class="times-equation">${a} × ${b} = <button type="button" class="times-question" data-reveal aria-label="곱셈식 정답 ${this.revealed?'가리기':'보기'}">${this.revealed?a*b:'?'}</button></div><div class="actions"><button id="times-prev" class="ghost" ${b===1?'disabled':''}>← 이전 식</button><button id="times-next" ${b===9?'disabled':''}>다음 식 →</button></div><p class="muted">${b} / 9</p></section>`;
     this.bindHome();document.querySelectorAll('[data-reveal]').forEach(button=>button.onclick=()=>{this.revealed=!this.revealed;this.learn();});
@@ -68,14 +69,15 @@ const TimesGarden={
   start(queue,retry=false){this.pauseClock();this.runTimeLimit=this.timeLimit;this.queue=queue.map(q=>({...q}));this.records=[];this.index=0;this.retry=retry;this.saved=false;this.saveError=false;this.id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);this.beginQuestion();},
   beginQuestion(){if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.tries=0;this.done=false;this.phase='quiz';this.remainingMs=(this.runTimeLimit||0)*1000;this.clockPaused=true;this.feedbackHint=false;this.quiz();},
   quiz(){
+    this.clockResizeObserver?.disconnect();
     window.GardenNav?.sync('times-quiz');const q=this.queue[this.index];
-    app.innerHTML=`<section class="panel times">${this.viewHeader('곱을 구해 보세요.',`<p class="eyebrow times-progress">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1}/${this.queue.length}</p>`)}<form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <span class="times-answer-frame"><input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"><span id="times-answer-timer" class="times-answer-timer" hidden aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path id="times-countdown-stroke" d="M50 4H86Q96 4 96 14V86Q96 96 86 96H14Q4 96 4 86V14Q4 4 14 4H50" pathLength="100" vector-effect="non-scaling-stroke"/></svg></span></span></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요!!</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
+    app.innerHTML=`<section class="panel times">${this.viewHeader('곱을 구해 보세요.',`<p class="eyebrow times-progress">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1}/${this.queue.length}</p>`)}<form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <span class="times-answer-frame"><input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"><span id="times-answer-timer" class="times-answer-timer" hidden aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path id="times-countdown-stroke" d="M50 4H86Q96 4 96 14V86Q96 96 86 96H14Q4 96 4 86V14Q4 4 14 4H50"/></svg></span></span></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요!!</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
     this.bindHome();const input=document.querySelector('#times-answer');
     input.oninput=()=>{input.value=input.value.replace(/\D/g,'').slice(0,2);this.clearClockHint();};
     document.querySelectorAll('[data-key]').forEach(el=>el.onclick=()=>{if(this.done)return;const k=el.dataset.key;input.value=k==='지우기'?'':k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,2);this.clearClockHint();});
     document.querySelector('#times-form').onsubmit=e=>{e.preventDefault();this.submit();};
     document.querySelector('#times-continue').onclick=()=>this.advance();
-    this.resumeClock();
+    this.resumeClock();this.watchClockFrame();
   },
   submit(){
     if(this.done)return;const input=document.querySelector('#times-answer'),feedback=document.querySelector('#times-feedback'),q=this.queue[this.index];
@@ -108,17 +110,42 @@ const TimesGarden={
     const stroke=document.querySelector('#times-countdown-stroke');
     if(stroke?.style&&!this.clockAnimation){
       const fraction=this.runTimeLimit?Math.max(0,Math.min(1,this.remainingMs/(this.runTimeLimit*1000))):0;
-      stroke.style.strokeDashoffset=String(100*(1-fraction));
+      stroke.style.strokeDashoffset=String((this.clockPathLength||100)*(1-fraction));
     }
   },
+  measureClockFrame(){
+    const frame=document.querySelector('#times-answer-timer'),stroke=document.querySelector('#times-countdown-stroke');
+    const bounds=frame?.getBoundingClientRect?.();
+    this.clockPathLength=100;
+    if(!bounds||bounds.width<=8||bounds.height<=8||!stroke?.getTotalLength)return;
+    const svg=stroke.ownerSVGElement,w=bounds.width,h=bounds.height,inset=2,r=Math.min(6,(w-4)/4,(h-4)/4),right=w-inset,bottom=h-inset;
+    // Match SVG coordinates to CSS pixels, then use the actual rendered path length for both dashes and offsets.
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+    stroke.setAttribute('d',`M ${w/2} ${inset} H ${right-r} Q ${right} ${inset} ${right} ${inset+r} V ${bottom-r} Q ${right} ${bottom} ${right-r} ${bottom} H ${inset+r} Q ${inset} ${bottom} ${inset} ${bottom-r} V ${inset+r} Q ${inset} ${inset} ${inset+r} ${inset} H ${w/2}`);
+    const length=stroke.getTotalLength();
+    if(Number.isFinite(length)&&length>0)this.clockPathLength=length;
+    stroke.style.strokeDasharray=`${this.clockPathLength} ${this.clockPathLength}`;
+  },
+  watchClockFrame(){
+    const frame=document.querySelector('#times-answer-timer');
+    if(typeof ResizeObserver!=='function'||!frame||!this.runTimeLimit||this.done)return;
+    this.clockResizeObserver=new ResizeObserver(()=>{
+      if(frame!==document.querySelector('#times-answer-timer')||!this.active()||this.done||!this.remainingMs)return;
+      if(!this.clockPaused)this.remainingMs=Math.max(0,this.clockDeadline-Date.now());
+      this.animateClockFrame();this.paintClock();
+    });
+    this.clockResizeObserver.observe(frame);
+  },
   animateClockFrame(){
-    this.cancelClockFrame();this.paintClockFrame();
+    this.cancelClockFrame();this.paintClockFrame();this.measureClockFrame();
+    if(!this.clockPaused&&this.clockDeadline)this.remainingMs=Math.max(0,this.clockDeadline-Date.now());
+    this.paintClock();
     if(!this.remainingMs||!this.runTimeLimit||this.done||this.clockPaused)return;
     const stroke=document.querySelector('#times-countdown-stroke');if(!stroke?.style)return;
     // Use one continuous native animation; elapsed time remains controlled by the existing clock.
     if(typeof stroke.animate==='function'&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
       stroke.style.transition='none';
-      this.clockAnimation=stroke.animate([{strokeDashoffset:stroke.style.strokeDashoffset},{strokeDashoffset:'100'}],{duration:this.remainingMs,easing:'linear',fill:'forwards'});
+      this.clockAnimation=stroke.animate([{strokeDashoffset:stroke.style.strokeDashoffset},{strokeDashoffset:String(this.clockPathLength||100)}],{duration:this.remainingMs,easing:'linear',fill:'forwards'});
     }else stroke.style.transition='stroke-dashoffset 250ms linear';
   },
   tickClock(){
@@ -144,7 +171,7 @@ const TimesGarden={
   advance(){if(!this.done)return;if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}if(++this.index<this.queue.length)this.beginQuestion();else this.finish();},
   scheduleAdvance(){if(this.nextTimer)clearTimeout(this.nextTimer);this.nextTimer=setTimeout(()=>{this.nextTimer=null;if(this.phase==='quiz'&&this.done)this.advance();},800);},
   finish(){
-    this.pauseClock();this.phase='result';window.GardenNav?.sync('times-result');const first=this.records.filter(r=>r.first).length,second=this.records.filter(r=>r.second).length;
+    this.clockResizeObserver?.disconnect();this.pauseClock();this.phase='result';window.GardenNav?.sync('times-result');const first=this.records.filter(r=>r.first).length,second=this.records.filter(r=>r.second).length;
     if(!this.saved&&!this.retry){this.saved=true;try{const old=readStudyValue('garden-times-history',[]);if(!TimesEngine.validHistory(old))throw Error('기록 형식');localStorage.setItem('garden-times-history',JSON.stringify([...old,{id:this.id,date:new Date().toISOString(),total:this.queue.length,first,second}]));}catch{this.saveError=true;}}
     this.wrong=this.records.filter(r=>!r.first);
     app.innerHTML=`<section class="panel times">${this.viewHeader('끝까지 해냈어요! 🌻',`<p class="eyebrow times-progress">${this.retry?'다시 연습 완료':'오늘도 한 걸음 성장했어요'}</p>`,'h1')}<p>처음에 맞힌 문제 <strong>${first}개</strong><br>다시 풀어 맞힌 문제 <strong>${second}개</strong><br>정답을 함께 확인한 문제 <strong>${this.queue.length-first-second}개</strong></p>${this.saveError?'<p role="alert">기록을 저장하지 못했어요. 현재 결과는 아래에서 확인할 수 있어요.</p>':''}${this.wrong.length?'<div class="actions"><button id="times-retry">틀린 문제 다시 풀기</button></div>':''}${this.wrong.length?`<h2>다시 살펴볼 식</h2><p class="muted">처음에 틀렸던 문제를 모았어요.</p>${this.wrong.map(q=>`<p>${q.a} × ${q.b} = ${q.a*q.b}</p>`).join('')}`:'<p>모두 처음에 맞혔어요! 🌼</p>'}</section>`;
