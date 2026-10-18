@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v1.8.12 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v1.8.13 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -56,14 +56,39 @@ function getHubExpressions(){
   if(!hubExpressions){const times=chooseHubExpression(hubDanTotals('times'));hubExpressions={times,math:chooseHubExpression(hubDanTotals('math'),times)};}
   return hubExpressions;
 }
+function hubEquationMarkup(subject){
+  const expressions=getHubExpressions(),q=expressions[subject],shown=!!expressions[subject+'Revealed'];
+  return `<button type="button" id="hub-equation-${subject}" class="hub-equation" aria-pressed="${shown}" aria-label="${q.a} 곱하기 ${q.b}, ${shown?'식 보기':'답 보기'}">${shown?q.a*q.b:`${q.a} × ${q.b}`}</button>`;
+}
+function bindHubEquation(subject){
+  const button=document.querySelector('#hub-equation-'+subject);
+  button.onclick=()=>{
+    const expressions=getHubExpressions(),q=expressions[subject],shown=expressions[subject+'Revealed']=!expressions[subject+'Revealed'];
+    button.textContent=shown?String(q.a*q.b):`${q.a} × ${q.b}`;
+    button.setAttribute('aria-pressed',String(shown));
+    button.setAttribute('aria-label',`${q.a} 곱하기 ${q.b}, ${shown?'식 보기':'답 보기'}`);
+  };
+}
+function gardenBloomStage(records=history){
+  if(!records.length)return 0;
+  const best=Math.max(...records.map(h=>Math.max(h.score,Number.isFinite(h.bloomPeak)?h.bloomPeak:0)));
+  return best>=100?4:best>=80?3:best>=60?2:1;
+}
+function gardenBloomMarkup(){
+  const stage=gardenBloomStage(),names=['작은 꽃봉오리','자라나는 꽃봉오리','살짝 열린 꽃','거의 활짝 핀 꽃','활짝 핀 꽃'];
+  const spread=[7,15,36,60,78][stage],width=[17,20,24,27,29][stage];
+  const petals=[-2,-1,0,1,2].map((n,i)=>`<ellipse cx="150" cy="77" rx="${width}" ry="43" fill="url(#bloom-petal-${i%2})" stroke="#df8fa8" stroke-width="1.2" transform="rotate(${n*spread/2} 150 110)"/>`).join('');
+  return `<div class="garden bloom-garden"><svg class="garden-bloom stage-${stage}" viewBox="0 0 300 240" role="img" aria-label="${names[stage]}"><defs><linearGradient id="bloom-petal-0" x2=".8" y2="1"><stop stop-color="#fff0f4"/><stop offset="1" stop-color="#eb9bb6"/></linearGradient><linearGradient id="bloom-petal-1" x2=".8" y2="1"><stop stop-color="#ffdbe8"/><stop offset="1" stop-color="#e58eaf"/></linearGradient><linearGradient id="bloom-leaf"><stop stop-color="#accd9a"/><stop offset="1" stop-color="#749b70"/></linearGradient></defs><ellipse cx="150" cy="215" rx="60" ry="8" fill="#719260" opacity=".12"/><path d="M150 204 Q145 155 150 108" fill="none" stroke="#7da477" stroke-width="8" stroke-linecap="round"/><path d="M149 174 Q98 173 103 143 Q136 141 149 174 M150 186 Q197 183 199 153 Q165 152 150 186" fill="url(#bloom-leaf)"/>${petals}<path d="M130 111 Q150 139 170 111 Q153 120 150 107 Q146 121 130 111" fill="#84aa76"/>${stage>=3?'<ellipse cx="150" cy="109" rx="17" ry="10" fill="#f3d47c"/>':''}${stage===4?'<g class="bloom-sparkles" fill="#dbb45d"><path d="M66 57l3 9 9 3-9 3-3 9-3-9-9-3 9-3z M232 72l2 7 7 2-7 2-2 7-2-7-7-2 7-2z M210 32l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></g>':''}</svg><small>보고 · 생각하고 · 풀어 봐요</small></div>`;
+}
 function hub(){
   if(!authenticated)return login();
   stopDictation();screen='hub';setStudyScreen(screen);
   const stats=readStudyValue('dictation-stats',{}),rows=stats&&typeof stats==='object'?Object.values(stats):[];
   const expressions=getHubExpressions();
   const runs=rows.reduce((sum,r)=>sum+(Number.isFinite(r?.runs)?r.runs:0),0);
-  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><div class="welcome-heading"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1></div><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span>${expressions.times.a} × ${expressions.times.b}</span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span>${expressions.math.a} × ${expressions.math.b}</span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
+  app.innerHTML=`<section class="study-welcome has-mood"><div class="welcome-copy"><div class="welcome-heading"><span class="eyebrow">지안이의 하루 한 뼘</span><h1>오늘은 어떤 꽃을<br>피워 볼까요?</h1></div><p>숫자를 생각하고, 바른 글을 써 봐요.</p></div>${window.GardenMood?.markup()||'<div class="study-sprouts" aria-hidden="true">🌷 🌼 🌿</div>'}</section><div class="subject-grid"><div class="subject-shell"><button id="open-times" class="subject-card" type="button"><span class="subject-illustration" aria-hidden="true">🌻<span class="subject-equation-placeholder"></span></span><span class="subject-label">구구단</span><strong>구구단 연습</strong><span class="subject-description">그림으로 익히고, 차근차근 풀어요.</span><span class="subject-record">익히기 · 차례대로 · 섞어서 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('times')}</div><div class="subject-shell"><button id="open-math" class="subject-card math-card" type="button"><span class="subject-illustration" aria-hidden="true">🌷<span class="subject-equation-placeholder"></span></span><span class="subject-label">수학</span><strong>곱셈정원</strong><span class="subject-description">그림과 숫자로 곱셈을 배워요.</span><span class="subject-record">완료한 평가 ${history.length}회 <span aria-hidden="true">↗</span></span></button>${hubEquationMarkup('math')}</div><button id="open-dictation" class="subject-card dictation-card" type="button"><span class="subject-illustration" aria-hidden="true">📖<span>가 나 다</span></span><span class="subject-label">국어</span><strong>받아쓰기 공책</strong><span class="subject-description">듣고 쓰고, 바른 글을 익혀요.</span><span class="subject-record">완료한 연습 ${runs}회 <span aria-hidden="true">↗</span></span></button></div><details class="panel study-backup"><summary>학습 데이터 백업</summary><p class="muted">수학·구구단 기록과 받아쓰기 문장·설정·기록을 파일로 보관해요. 가져오면 파일에 들어 있는 항목이 바뀝니다.</p><div class="actions"><button id="export-study" class="ghost" type="button">전체 내보내기</button><button id="import-study" class="ghost" type="button">전체 가져오기</button></div><input id="study-backup-file" type="file" accept=".json,application/json" hidden><p id="backup-notice" class="muted" role="status"></p></details>`;
   window.GardenMood?.bindWelcome(app);
+  bindHubEquation('times');bindHubEquation('math');
   document.querySelector('#open-math').onclick=()=>{home();window.scrollTo(0,0);};
   document.querySelector('#open-times').onclick=()=>TimesGarden.open();
   document.querySelector('#open-dictation').onclick=openDictation;
@@ -106,7 +131,7 @@ function validStudyBackup(text){
       const moodKeys=['greeting','eye-smile','excited','surprised','thinking','sad','determined','sleepy'];
       if(!value||typeof value!=='object'||Array.isArray(value)||![...moodKeys,'random'].includes(value.choice)||!moodKeys.includes(value.current)||(value.messages!==undefined&&(!value.messages||typeof value.messages!=='object'||Array.isArray(value.messages)||Object.entries(value.messages).some(([mood,bag])=>!moodKeys.includes(mood)||!bag||!Number.isInteger(bag.last)||bag.last<0||bag.last>9||!Array.isArray(bag.remaining)||bag.remaining.length>9||new Set(bag.remaining).size!==bag.remaining.length||bag.remaining.some(i=>!Number.isInteger(i)||i<0||i>9||i===bag.last)))))throw Error('기분 선택을 확인해 주세요.');
     }else if(key==='garden-history'){
-      if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')||(h.danStats!==undefined&&!validDanStats(h.danStats))))throw Error('수학 기록을 확인해 주세요.');
+      if(!Array.isArray(value)||value.some(h=>!h||!Number.isFinite(h.score)||h.score<0||h.score>100||typeof h.date!=='string'||(h.id!==undefined&&typeof h.id!=='string')||(h.bloomPeak!==undefined&&(!Number.isFinite(h.bloomPeak)||h.bloomPeak<0||h.bloomPeak>100))||(h.danStats!==undefined&&!validDanStats(h.danStats))))throw Error('수학 기록을 확인해 주세요.');
     }else{
       if(!value||typeof value!=='object'||Array.isArray(value))throw Error('받아쓰기 데이터를 확인해 주세요.');
       if(key==='dictation-settings'){
@@ -130,9 +155,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.12',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.13',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.12-backup.json';
+  const filename='learning-garden-v1.8.13-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
