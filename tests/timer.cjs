@@ -1,14 +1,14 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-function fixture(saved=null,blocked=false){
- let now=0,nextId=0;const timers=new Map(),storage=new Map(saved===null?[]:[['garden-times-seconds',saved]]),nodes=new Map();
+function fixture(saved=null,blocked=false,nativeAnimation=false,reducedMotion=false){
+ let now=0,nextId=0;const animations=[],timers=new Map(),storage=new Map(saved===null?[]:[['garden-times-seconds',saved]]),nodes=new Map();
  class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
- const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,setAttribute(){},focus(){},isConnected:true});return nodes.get(s);};
+ const get=s=>{if(!nodes.has(s))nodes.set(s,{value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,style:{},setAttribute(){},focus(){},isConnected:true});const node=nodes.get(s);if(nativeAnimation&&s==='#times-countdown-stroke')node.animate=(frames,options)=>{const animation={frames,options,canceled:false,cancel(){this.canceled=true;}};animations.push(animation);return animation;};return node;};
  const dialog={open:false,setAttribute(){},querySelector:get,showModal(){this.open=true;},close(){this.open=false;this.onclose?.();}};
- const ctx=vm.createContext({console,Date:Clock,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:k=>{if(blocked)throw Error('blocked');return storage.get(k)??null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');storage.set(k,v);},removeItem:k=>storage.delete(k)},sessionStorage:{getItem:()=>null},document:{body:{dataset:{},appendChild(){}},activeElement:get('#draft'),querySelector:s=>get(s),querySelectorAll:()=>[],createElement:()=>dialog},window:{scrollTo(){}},confirm:()=>true,setTimeout(fn,delay){const id=++nextId;timers.set(id,{fn,at:now+delay});return id;},clearTimeout:id=>timers.delete(id)});
+ const ctx=vm.createContext({console,Date:Clock,Math,Set,Map,Array,JSON,Number,String,RegExp,navigator:{},localStorage:{getItem:k=>{if(blocked)throw Error('blocked');return storage.get(k)??null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');storage.set(k,v);},removeItem:k=>storage.delete(k)},sessionStorage:{getItem:()=>null},document:{body:{dataset:{},appendChild(){}},activeElement:get('#draft'),querySelector:s=>get(s),querySelectorAll:()=>[],createElement:()=>dialog},window:{scrollTo(){},matchMedia:()=>({matches:reducedMotion})},confirm:()=>true,setTimeout(fn,delay){const id=++nextId;timers.set(id,{fn,at:now+delay});return id;},clearTimeout:id=>timers.delete(id)});
  for(const file of ['pictures.js','times.js','study.js','questions.js','navigation.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/../'+file,'utf8').replace('installPullToRefresh();authenticated?hub():login();',''),ctx);
  const run=s=>vm.runInContext(s,ctx);run("authenticated=true;screen='times'");
  const advance=ms=>{const end=now+ms;while(true){const entries=[...timers.entries()].filter(([,v])=>v.at<=end).sort((a,b)=>a[1].at-b[1].at);if(!entries.length)break;const [id,t]=entries[0];timers.delete(id);now=t.at;t.fn();}now=end;};
- return {ctx,run,get,dialog,storage,timers,advance,garden:run('TimesGarden'),markup:()=>get('#app').innerHTML};
+ return {ctx,run,get,dialog,storage,timers,advance,animations,garden:run('TimesGarden'),markup:()=>get('#app').innerHTML};
 }
 const f=fixture(),g=f.garden;assert.equal(g.timeLimit,0);
 g.mode='learn';g.home();assert(!f.markup().includes('id="times-seconds"'));assert(f.markup().includes('틀린문제 풀기'));
@@ -29,3 +29,14 @@ assert.equal(f.run(`validStudyBackup(JSON.stringify({app:'liah-learning-garden',
 assert.throws(()=>f.run(`validStudyBackup(JSON.stringify({app:'liah-learning-garden',format:1,data:{'garden-times-seconds':1}}))`));
 f.run(`applyStudyBackup({'garden-times-seconds':10})`);assert.equal(g.timeLimit,10);
 console.log('Timer: layout/modes/persistence, 5/10 seconds, exact !! copy, expiry without forced error, late answer/mastery, unchanged 800ms advance, feedback, rerender, leave pause/resume/exit, backup and blocked storage passed.');
+
+// The answer frame follows the same remaining time and stops on the same boundaries.
+const ring=fixture(),rg=ring.garden;rg.timeLimit=5;rg.start([{a:3,b:4},{a:2,b:3}]);
+assert(ring.markup().includes('class="times-answer-frame"'));assert(ring.markup().includes('pathLength="100"'));assert(!ring.get('#times-answer-timer').hidden);
+assert.equal(+ring.get('#times-countdown-stroke').style.strokeDashoffset,0);ring.advance(2000);assert(Math.abs(+ring.get('#times-countdown-stroke').style.strokeDashoffset-40)<.001);assert.equal(ring.get('#times-feedback').textContent,'남은 시간 3초');
+ring.advance(3000);assert(ring.get('#times-answer-timer').hidden);assert.equal(ring.get('#times-feedback').textContent,'천천히 생각해도 괜찮아요!!');assert(!rg.done);
+ring.get('#times-answer').value='12';rg.submit();ring.advance(800);assert(!ring.get('#times-answer-timer').hidden);assert.equal(+ring.get('#times-countdown-stroke').style.strokeDashoffset,0);
+ring.get('#times-answer').value='6';rg.submit();assert(ring.get('#times-answer-timer').hidden);ring.advance(800);rg.timeLimit=0;rg.start([{a:3,b:3}]);assert(ring.get('#times-answer-timer').hidden);
+const smooth=fixture(null,false,true),sg=smooth.garden;sg.timeLimit=10;sg.start([{a:7,b:8}]);assert.equal(smooth.animations.length,1);assert.equal(smooth.animations[0].options.duration,10000);assert.equal(smooth.animations[0].options.easing,'linear');smooth.advance(2100);sg.pauseClock();assert(smooth.animations[0].canceled);assert(Math.abs(+smooth.get('#times-countdown-stroke').style.strokeDashoffset-21)<.001);smooth.advance(40000);sg.resumeClock();assert.equal(smooth.animations[1].options.duration,7900);assert(Math.abs(+smooth.animations[1].frames[0].strokeDashoffset-21)<.001);smooth.advance(7900);assert(smooth.animations[1].canceled);assert(smooth.get('#times-answer-timer').hidden);
+const reduced=fixture(null,false,true,true);reduced.garden.timeLimit=5;reduced.garden.start([{a:2,b:2}]);assert.equal(reduced.animations.length,0);reduced.advance(5000);assert(reduced.get('#times-answer-timer').hidden);
+console.log('Answer frame: stable input wrapper, matching numerical countdown/progress, expiry/reset/answer/untimed visibility, smooth native animation pause/resume and reduced-motion fallback passed.');

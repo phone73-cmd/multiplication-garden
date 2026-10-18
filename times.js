@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.25: picture learning and optional gentle per-question countdown. */
+/* 구구단 연습 v1.8.26: picture learning and optional gentle per-question countdown. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -63,7 +63,7 @@ const TimesGarden={
   beginQuestion(){if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}this.tries=0;this.done=false;this.phase='quiz';this.remainingMs=(this.runTimeLimit||0)*1000;this.clockPaused=true;this.feedbackHint=false;this.quiz();},
   quiz(){
     window.GardenNav?.sync('times-quiz');const q=this.queue[this.index];
-    app.innerHTML=`<section class="panel times"><button id="times-home" class="ghost">← 구구단 홈</button><p class="eyebrow">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1} / ${this.queue.length}</p><h2>곱을 구해 보세요.</h2><form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요!!</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
+    app.innerHTML=`<section class="panel times"><button id="times-home" class="ghost">← 구구단 홈</button><p class="eyebrow">${this.retry?'다시 연습':'구구단 연습'} · ${this.index+1} / ${this.queue.length}</p><h2>곱을 구해 보세요.</h2><form id="times-form"><label class="times-equation" for="times-answer">${q.a} × ${q.b} = <span class="times-answer-frame"><input id="times-answer" class="entry" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-label="곱의 값"><span id="times-answer-timer" class="times-answer-timer" hidden aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path id="times-countdown-stroke" d="M50 4H86Q96 4 96 14V86Q96 96 86 96H14Q4 96 4 86V14Q4 4 14 4H50" pathLength="100" vector-effect="non-scaling-stroke"/></svg></span></span></label><p id="times-feedback" role="status" aria-live="polite">천천히 생각해도 괜찮아요!!</p><div class="times-keypad">${[1,2,3,4,5,6,7,8,9,'지우기',0,'⌫'].map(k=>`<button type="button" class="ghost" data-key="${k}" aria-label="${k==='⌫'?'한 자리 지우기':k}">${k}</button>`).join('')}</div><button id="times-check" type="submit">확인</button></form><div id="times-help"></div><button id="times-continue" hidden>다음 문제 →</button></section>`;
     this.bindHome();const input=document.querySelector('#times-answer');
     input.oninput=()=>{input.value=input.value.replace(/\D/g,'').slice(0,2);this.clearClockHint();};
     document.querySelectorAll('[data-key]').forEach(el=>el.onclick=()=>{if(this.done)return;const k=el.dataset.key;input.value=k==='지우기'?'':k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,2);this.clearClockHint();});
@@ -76,7 +76,7 @@ const TimesGarden={
     if(!/^\d{1,2}$/.test(input.value)){this.feedbackHint=true;feedback.textContent='답을 써 주세요.';return;}
     const correct=TimesEngine.check(q,input.value);this.tries++;
     if(!correct&&this.tries===1){this.feedbackHint=true;feedback.textContent='한 번 더 생각해 볼까요?';input.value='';return;}
-    this.pauseClock();this.done=true;this.records.push({...q,first:correct&&this.tries===1,second:correct&&this.tries===2});
+    this.pauseClock();this.done=true;this.paintClockFrame();this.records.push({...q,first:correct&&this.tries===1,second:correct&&this.tries===2});
     try{localStorage.setItem('garden-times-facts',JSON.stringify(TimesEngine.recordFact(TimesEngine.readFacts(),q,correct&&this.tries===1)));}catch{this.saveError=true;}
     feedback.textContent=correct?(this.tries===1?'맞았어요! 🌼':'다시 풀어 맞혔어요! 🌱'):`${q.a} × ${q.b} = ${q.a*q.b}입니다. 그림으로 확인해요.`;
     input.disabled=true;document.querySelector('#times-check').hidden=true;document.querySelectorAll('[data-key]').forEach(el=>el.disabled=true);
@@ -86,11 +86,34 @@ const TimesGarden={
   },
   clearClockHint(){if(this.runTimeLimit&&!this.done){this.feedbackHint=false;this.paintClock();}},
   paintClock(){
+    this.paintClockFrame();
     if(this.done||this.phase!=='quiz')return;
     const feedback=document.querySelector('#times-feedback');if(!feedback)return;
     let text;if(!this.remainingMs){this.feedbackHint=false;text='천천히 생각해도 괜찮아요!!';}
     else if(!this.feedbackHint)text=`남은 시간 ${Math.ceil(this.remainingMs/1000)}초`;
     if(text!==undefined&&feedback.textContent!==text)feedback.textContent=text;
+  },
+  cancelClockFrame(){this.clockAnimation?.cancel();this.clockAnimation=null;},
+  paintClockFrame(){
+    const frame=document.querySelector('#times-answer-timer');
+    if(!frame)return;
+    frame.hidden=!this.runTimeLimit||this.remainingMs<=0||this.done||this.phase!=='quiz';
+    if(frame.hidden)this.cancelClockFrame();
+    const stroke=document.querySelector('#times-countdown-stroke');
+    if(stroke?.style&&!this.clockAnimation){
+      const fraction=this.runTimeLimit?Math.max(0,Math.min(1,this.remainingMs/(this.runTimeLimit*1000))):0;
+      stroke.style.strokeDashoffset=String(100*(1-fraction));
+    }
+  },
+  animateClockFrame(){
+    this.cancelClockFrame();this.paintClockFrame();
+    if(!this.remainingMs||!this.runTimeLimit||this.done||this.clockPaused)return;
+    const stroke=document.querySelector('#times-countdown-stroke');if(!stroke?.style)return;
+    // Use one continuous native animation; elapsed time remains controlled by the existing clock.
+    if(typeof stroke.animate==='function'&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+      stroke.style.transition='none';
+      this.clockAnimation=stroke.animate([{strokeDashoffset:stroke.style.strokeDashoffset},{strokeDashoffset:'100'}],{duration:this.remainingMs,easing:'linear',fill:'forwards'});
+    }else stroke.style.transition='stroke-dashoffset 250ms linear';
   },
   tickClock(){
     if(this.clockTimer){clearTimeout(this.clockTimer);this.clockTimer=null;}
@@ -102,13 +125,15 @@ const TimesGarden={
     const running=!!this.runTimeLimit&&!this.clockPaused&&!this.done&&this.phase==='quiz'&&this.remainingMs>0;
     if(running)this.remainingMs=Math.max(0,this.clockDeadline-Date.now());
     if(this.clockTimer){clearTimeout(this.clockTimer);this.clockTimer=null;}
-    this.clockPaused=true;return running;
+    this.clockPaused=true;this.cancelClockFrame();
+    const stroke=document.querySelector('#times-countdown-stroke');if(stroke?.style)stroke.style.transition='none';
+    this.paintClockFrame();return running;
   },
   resumeClock(){
     if(this.done||!this.active())return;
     if(!this.runTimeLimit){this.remainingMs=0;this.paintClock();return;}
     if(this.clockPaused){this.clockPaused=false;this.clockDeadline=Date.now()+this.remainingMs;}
-    this.tickClock();
+    this.tickClock();this.animateClockFrame();
   },
   advance(){if(!this.done)return;if(this.nextTimer){clearTimeout(this.nextTimer);this.nextTimer=null;}if(++this.index<this.queue.length)this.beginQuestion();else this.finish();},
   scheduleAdvance(){if(this.nextTimer)clearTimeout(this.nextTimer);this.nextTimer=setTimeout(()=>{this.nextTimer=null;if(this.phase==='quiz'&&this.done)this.advance();},800);},
