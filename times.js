@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.19: picture learning and untimed practice. */
+/* 구구단 연습 v1.8.20: picture learning and untimed practice. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
