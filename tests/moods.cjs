@@ -26,13 +26,15 @@ function make(saved=data){
 const f=make();const mood=f.api;
 assert.equal(mood.items.length,8);assert.equal(mood.get().choice,'greeting');
 vm.runInContext('login()',f.ctx);assert.equal(f.buttons().length,9);assert.equal((f.app.innerHTML.match(/type="button" class="mood-choice"/g)||[]).length,9);
+f.buttons().find(b=>b.dataset.mood==='greeting').onclick();assert.equal(f.buttons().filter(b=>b.attrs['aria-pressed']==='true').length,1);
 f.get('#garden-code').value='0619';f.buttons().find(b=>b.dataset.mood==='random').onclick();
 assert.equal(f.get('#garden-code').value,'0619');assert(mood.drawing());assert(f.buttons().every(b=>b.disabled));assert.equal(f.get('#garden-enter').disabled,true);
 assert.equal(f.buttons().filter(b=>b.classList.values.has('is-drawing')).length,1);
-assert.equal(randomCalls,1);
+assert.equal(randomCalls,1);assert(f.buttons().every(b=>b.attrs['aria-pressed']==='false'));
 f.buttons().find(b=>b.dataset.mood==='random').onclick();assert.equal(randomCalls,1);
 f.get('#login-form').onsubmit({preventDefault(){}});assert.equal(vm.runInContext('authenticated',f.ctx),false);
-f.tick(1899);assert(mood.drawing());f.tick(1);
+for(let elapsed=0;elapsed<1800;elapsed+=50){f.tick(50);assert(mood.drawing());assert(f.buttons().every(b=>b.attrs['aria-pressed']==='false'));assert.equal(f.buttons().filter(b=>b.classList.values.has('is-drawing')).length,1);}
+f.tick(99);assert(mood.drawing());f.tick(1);
 assert(!mood.drawing());assert.equal(mood.current().key,'determined');assert.equal(f.get('#mood-draw-status').textContent,'오늘은 다짐!');
 assert.equal(f.buttons().filter(b=>b.attrs['aria-pressed']==='true').length,1);assert.equal(f.buttons().find(b=>b.attrs['aria-pressed']==='true').dataset.mood,'determined');
 assert(f.buttons().every(b=>!b.disabled));assert.equal(f.get('#garden-enter').disabled,false);
@@ -86,3 +88,13 @@ for(const messages of [[],{bad:{last:0,remaining:[1]}},{greeting:{last:0,remaini
 vm.runInContext("authenticated=true;hub()",phraseFixture.ctx);const beforeRefresh=captionsFor(phraseFixture.api);vm.runInContext('refreshCurrentScreen()',phraseFixture.ctx);assert.equal(captionsFor(phraseFixture.api),beforeRefresh);
 vm.runInContext("setStudyScreen('home');hub()",phraseFixture.ctx);assert.notEqual(captionsFor(phraseFixture.api),beforeRefresh);
 console.log('80 encouragements: ten unique phrases per mood for three cycles, no boundary repeats, persisted bags, backup roundtrip/invalid rejection, stable hub refresh and fresh home entry passed.');
+
+const cancelFixture=make(new Map());vm.runInContext('login()',cancelFixture.ctx);
+cancelFixture.buttons().find(b=>b.dataset.mood==='sad').onclick();
+cancelFixture.buttons().find(b=>b.dataset.mood==='random').onclick();cancelFixture.tick(300);
+assert(cancelFixture.buttons().every(b=>b.attrs['aria-pressed']==='false'));
+cancelFixture.api.cancelDraw();assert.equal(cancelFixture.api.current().key,'sad');
+assert.equal(cancelFixture.buttons().filter(b=>b.attrs['aria-pressed']==='true').length,1);
+assert.equal(cancelFixture.buttons().find(b=>b.attrs['aria-pressed']==='true').dataset.mood,'sad');
+assert.equal(cancelFixture.pending(),0);assert(cancelFixture.buttons().every(b=>!b.disabled&&!b.classList.values.has('is-drawing')));
+console.log('Random mood draw: prior selection hidden during every animation tick, exactly one moving highlight, winner-only final selection, cancellation restores previous mood and clears timers passed.');

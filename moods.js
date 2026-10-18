@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.10: a remembered mood, resolved by the visible draw before admission. */
+/* 배움정원 v1.8.11: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
@@ -192,14 +192,14 @@ window.GardenMood=(()=>{
       const winnerIndex=Math.floor(Math.random()*items.length),winner=items[winnerIndex];
       let timer=null,stopped=false;
       const cleanup=()=>{if(timer!==null)clearTimeout(timer);clearHighlights();busy(false);activeDraw=null;};
-      const cancel=()=>{stopped=true;cleanup();if(status)status.textContent=state.choice==='random'?'오늘은 '+current().label+'!':'';};
+      const cancel=()=>{stopped=true;cleanup();update();if(status)status.textContent=state.choice==='random'?'오늘은 '+current().label+'!':'';};
       const finish=()=>{
         if(stopped)return;
         cleanup();state.choice='random';state.current=winner.key;save();update();
         buttons.find(b=>b.dataset.mood===winner.key)?.classList.add('is-picked');
         if(status)status.textContent='오늘은 '+winner.label+'!';
       };
-      activeDraw={cancel};clearHighlights();busy(true);
+      activeDraw={cancel};clearHighlights();buttons.forEach(b=>b.setAttribute('aria-pressed','false'));busy(true);
       if(status)status.textContent='두근두근, 어떤 기분일까?';
       if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
       const delays=[60,70,80,90,100,110,130,160,200,240,300,360];
