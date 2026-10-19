@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.33: choose a new flower only on successful admission. */
+/* 배움정원 v1.8.34: choose a new flower only on successful admission. */
 window.GardenFlowers=(()=>{
   const items=[
   {
