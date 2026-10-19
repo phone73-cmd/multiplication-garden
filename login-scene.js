@@ -1,0 +1,29 @@
+/* Local-time decoration for the login flower garden. Uses only existing illustrated assets. */
+window.GardenScene=(()=>{
+  const prefix='assets/login-scene/';let timer=null,layout=null,active=null,removeVisibility=null;
+  const period=(date=new Date())=>{const h=date.getHours();return h>=6&&h<16?'day':h>=16&&h<19?'dusk':'night';};
+  function pick(){return {grass:Math.random()<.5?1:2,left:18+Math.floor(Math.random()*12),right:58+Math.floor(Math.random()*12),height:40+Math.floor(Math.random()*22)};}
+  function image(key,cls=''){return `<img src="${prefix+key}.webp" class="${cls}" width="64" height="64" alt="" draggable="false" decoding="async">`;}
+  function contents(p){
+    const sky=p==='night'?'moon':'sun',creatures=p==='night'?['moth','firefly']:['dragonfly-flying','butterfly-flying'];
+    return `${p==='night'?'<span class="scene-stars">✦ · ✧ · ✦</span>':''}<span class="scene-celestial">${image(sky)}</span>${creatures.map((key,i)=>`<span class="scene-flyer ${key==='firefly'?'scene-firefly':''}" style="--x:${i?layout.right:layout.left}%;--y:${layout.height+(i?35:0)}px;--duration:${i?17:14}s;--delay:${i?-5:0}s;--face:${i?-1:1}">${image(key)}</span>`).join('')}${Array.from({length:layout.grass},(_,i)=>`<img src="assets/icons/grasshopper.webp" class="scene-grasshopper" style="--x:${i?73:13}%;--face:${i?-1:1}" width="34" height="30" alt="" draggable="false">`).join('')}`;
+  }
+  function markup(){layout=pick();const p=period();return `<div id="login-scene" class="login-scene" data-period="${p}" aria-hidden="true">${contents(p)}</div>`;}
+  function stop(){if(timer!==null){clearTimeout(timer);timer=null;}removeVisibility?.();removeVisibility=null;active=null;}
+  function bind(root){
+    stop();const sky=root.querySelector('.login-sky'),host=root.querySelector('#login-scene');if(!sky||!host)return;
+    if(!layout)layout=pick();active={sky,host};let shown=null;
+    const update=()=>{
+      if(!active)return;
+      const p=period();sky.setAttribute('data-period',p);
+      if(p!==shown){shown=p;host.setAttribute('data-period',p);host.innerHTML=contents(p);host.querySelectorAll('img').forEach(img=>img.onerror=()=>{img.hidden=true;});}
+      if(timer!==null)clearTimeout(timer);
+      timer=setTimeout(update,60000-(Date.now()%60000));
+    };
+    update();
+    if(typeof document!=='undefined'&&document.addEventListener){
+      const visible=()=>{if(!document.hidden)update();};document.addEventListener('visibilitychange',visible);removeVisibility=()=>document.removeEventListener('visibilitychange',visible);
+    }
+  }
+  return {period,markup,bind,stop};
+})();

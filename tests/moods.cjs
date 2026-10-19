@@ -43,7 +43,7 @@ assert.equal(randomCalls,1);assert.equal(vm.runInContext('authenticated',f.ctx),
 f.get('#garden-code').value='0619';f.get('#login-form').onsubmit({preventDefault(){}});
 const afterAdmission=randomCalls;assert.equal(afterAdmission,15);assert.equal(mood.current().key,'determined');assert.equal(vm.runInContext('screen',f.ctx),'hub');
 assert.equal(f.welcome().src,'assets/moods/determined.webp');assert(!f.app.innerHTML.includes('class="study-sprouts"'));
-const hubCaption=f.app.innerHTML.match(/<figcaption>(.*?)<\/figcaption>/)[1];assert(hubCaption.length>0);
+const hubCaption=f.app.innerHTML.match(/<figcaption[^>]*>(.*?)<\/figcaption>/)[1];assert(hubCaption.length>0);
 vm.runInContext('refreshCurrentScreen();hub()',f.ctx);assert.equal(randomCalls,afterAdmission);assert(f.app.innerHTML.includes('<figcaption>'+hubCaption+'</figcaption>'));assert.equal(mood.current().key,'determined');
 const reboot=make();assert.equal(reboot.api.get().choice,'random');assert.equal(reboot.api.current().key,'determined');
 vm.runInContext('hub()',reboot.ctx);assert.equal(reboot.welcome().src,'assets/moods/determined.webp');assert.equal(randomCalls,afterAdmission+4);
@@ -54,7 +54,7 @@ vm.runInContext('login()',f.ctx);assert(!mood.drawing());assert.equal(f.pending(
 // Reduced motion resolves immediately and does not schedule cycling.
 f.setReduced(true);f.buttons().find(b=>b.dataset.mood==='random').onclick();assert(!mood.drawing());assert.equal(f.pending(),0);assert.equal(f.get('#mood-draw-status').textContent,'오늘은 다짐!');f.setReduced(false);
 const captions=new Set();
-for(const item of mood.items){assert(mood.choose(item.key));assert.equal(mood.enter().key,item.key);assert(mood.markup().includes(item.src));assert(fs.existsSync(root+'/'+item.src));assert(fs.existsSync(root+'/'+item.poster));captions.add(mood.markup().match(/<figcaption>(.*?)<\/figcaption>/)[1]);}assert.equal(captions.size,8);
+for(const item of mood.items){assert(mood.choose(item.key));assert.equal(mood.enter().key,item.key);assert(mood.markup().includes(item.src));assert(fs.existsSync(root+'/'+item.src));assert(fs.existsSync(root+'/'+item.poster));captions.add(mood.markup().match(/<figcaption[^>]*>(.*?)<\/figcaption>/)[1]);}assert.equal(captions.size,8);
 assert.equal(mood.choose('bad'),false);
 f.setReduced(true);vm.runInContext('authenticated=true;hub()',f.ctx);assert(f.welcome().src.endsWith('-still.webp'));
 f.setReduced(false);vm.runInContext('hub()',f.ctx);assert(!f.welcome().src.endsWith('-still.webp'));f.welcome().onerror();assert(f.welcome().src.endsWith('-still.webp'));
@@ -66,7 +66,7 @@ const sw=fs.readFileSync(root+'/sw.js','utf8');for(const item of mood.items)for(
 console.log('Mood picker: 8 choices + random, PIN preserved, invalid PIN does not resolve random, completed draw retained through login, hub/refresh persistence, no duplicate drawing, cancellation, static previews, reduced motion, eight encouragement captions, fallback, backup validation/restore and offline assets passed.');
 
 // Each mood has ten distinct phrases per cycle; bags persist across reload and backup.
-const phraseFixture=make(new Map());const captionsFor=api=>api.markup().match(/<figcaption>(.*?)<\/figcaption>/)[1];
+const phraseFixture=make(new Map());const captionsFor=api=>api.markup().match(/<figcaption[^>]*>(.*?)<\/figcaption>/)[1];
 for(const item of phraseFixture.api.items){
  const api=phraseFixture.api;api.choose(item.key);api.leaveWelcome();let previous;
  for(let cycle=0;cycle<3;cycle++){
@@ -104,3 +104,11 @@ const encouragements=JSON.parse(encouragementSource.match(/const encouragement=(
 assert.equal(Object.keys(encouragements).length,8);
 for(const phrases of Object.values(encouragements)){assert.equal(phrases.length,10);assert.equal(new Set(phrases).size,10);for(const text of phrases)assert([...text].length<=14,text);}
 console.log('Encouragement copy: all 80 phrases are 14 characters or fewer including spaces and punctuation.');
+const clickFixture=make(new Map()),clickMood=clickFixture.api;
+for(const item of clickMood.items){
+ clickMood.choose(item.key);vm.runInContext('authenticated=true;hub()',clickFixture.ctx);
+ const image=clickFixture.welcome(),src=image.src,button=clickFixture.get('#welcome-character-button'),text=clickFixture.get('#welcome-encouragement');
+ assert.equal(typeof button.onclick,'function');let previous=clickMood.markup().match(/<figcaption[^>]*>(.*?)<\/figcaption>/)[1];
+ for(let i=0;i<30;i++){button.onclick();assert(text.textContent);assert.notEqual(text.textContent,previous);assert.equal(image.src,src);assert.equal(clickMood.current().key,item.key);previous=text.textContent;}
+}
+console.log('Character click: 8 moods × 30 taps, meaning stays in chosen mood, no consecutive phrase repeats and unchanged character image passed.');

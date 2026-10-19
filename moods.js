@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.29: a remembered mood, resolved by the visible draw before admission. */
+/* 배움정원 v1.8.30: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
@@ -223,7 +223,7 @@ window.GardenMood=(()=>{
   }
   function markup(){
     const item=current();
-    return '<figure class="welcome-mood"><img id="welcome-mood-image" src="'+item.src+'" data-poster="'+item.poster+'" width="448" height="576" alt="'+item.label+' 표정의 지안이 캐릭터" decoding="async"><figcaption>'+caption()+'</figcaption></figure>';
+    return '<figure class="welcome-mood"><button id="welcome-character-button" class="welcome-character-button" type="button" aria-label="다른 응원 문구 보기"><img id="welcome-mood-image" src="'+item.src+'" data-poster="'+item.poster+'" width="448" height="576" alt="'+item.label+' 표정의 지안이 캐릭터" decoding="async"></button><figcaption id="welcome-encouragement" aria-live="polite" aria-atomic="true">'+caption()+'</figcaption></figure>';
   }
   function bindWelcome(root){
     const img=root.querySelector('#welcome-mood-image');if(!img)return;
@@ -231,6 +231,8 @@ window.GardenMood=(()=>{
     const update=()=>{img.src=media?.matches?img.dataset.poster:current().src;};
     update();
     img.onerror=()=>{img.onerror=null;img.src=img.dataset.poster;};
+    const button=root.querySelector('#welcome-character-button'),text=root.querySelector('#welcome-encouragement');
+    if(button&&text)button.onclick=()=>{activeCaption=null;text.textContent=caption();};
   }
   return {items,valid,choose,enter,current,picker,bind,markup,bindWelcome,leaveWelcome,cancelDraw,drawing:()=>!!activeDraw,get:()=>JSON.parse(JSON.stringify(state)),reload(){state=read();leaveWelcome();}};
 })();
