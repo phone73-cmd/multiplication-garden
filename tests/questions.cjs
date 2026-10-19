@@ -86,7 +86,7 @@ assert.equal(vm.runInContext("josa('사과','을/를')",context),'를');
 // Wrong PIN and omitted leading zero stay locked; exact four digits unlock.
 vm.runInContext('authenticated=false;home()',context);
 assert.equal(vm.runInContext('screen',context),'login');
-assert(vm.runInContext('app.innerHTML',context).includes('지안이의'));
+assert(vm.runInContext('app.innerHTML',context).includes('Jian’s Learning Garden'));
 context.document.querySelector('#garden-code');
 for(const pin of ['','619','0000','06190']){
  nodes.get('#garden-code').value=pin;nodes.get('#garden-code').focus=noop;

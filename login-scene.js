@@ -6,7 +6,7 @@ window.GardenScene=(()=>{
     const minute=date.getHours()*60+date.getMinutes()+date.getSeconds()/60;
     const day=minute>=360&&minute<1140;
     const progress=day?(minute-360)/780:((minute<360?minute+1440:minute)-1140)/660;
-    return {kind:day?'sun':'moon',progress,left:`calc(${progress*100}% + ${42-84*progress}px)`,top:`${12+52*(1-Math.sin(Math.PI*progress))}px`};
+    return {kind:day?'sun':'moon',progress,left:`calc(${progress*100}% + ${42-84*progress}px)`,top:`${10+28*(1-Math.sin(Math.PI*progress))}px`};
   }
   function pick(){return {grass:Math.random()<.5?2:3,left:18+Math.floor(Math.random()*12),right:58+Math.floor(Math.random()*12),height:40+Math.floor(Math.random()*22)};}
   function image(key,cls=''){return `<img src="${prefix+key}.webp" class="${cls}" width="64" height="64" alt="" draggable="false" decoding="async">`;}
@@ -17,7 +17,7 @@ window.GardenScene=(()=>{
   }
   function contents(p){
     const position=orbit(),sky=position.kind,creatures=p==='night'?['moth','firefly']:['dragonfly-flying','butterfly-flying'];
-    return `${p==='night'?'<span class="scene-stars">✦ · ✧ · ✦</span>':''}<span class="scene-celestial" style="--orbit-left:${position.left};--orbit-top:${position.top}">${image(sky)}</span>${creatures.map((key,i)=>flyerMarkup(key,i,p)).join('')}${Array.from({length:layout.grass},(_,i)=>`<img src="assets/icons/grasshopper.webp" class="scene-grasshopper" style="--x:${(layout.grass===2?[16,74]:[12,45,78])[i]}%;--face:${i?-1:1}" width="34" height="30" alt="" draggable="false">`).join('')}`;
+    return `${p==='night'?'<span class="scene-stars">✦ · ✧ · ✦</span>':''}<span class="scene-celestial" style="--orbit-left:${position.left};--orbit-top:${position.top}">${image(sky)}</span><span class="scene-cloud scene-cloud-one">${image('cloud')}</span><span class="scene-cloud scene-cloud-two">${image('cloud')}</span>${creatures.map((key,i)=>flyerMarkup(key,i,p)).join('')}${Array.from({length:layout.grass},(_,i)=>`<img src="assets/icons/grasshopper.webp" class="scene-grasshopper" style="--x:${(layout.grass===2?[16,74]:[12,45,78])[i]}%;--face:${i?-1:1}" width="34" height="30" alt="" draggable="false">`).join('')}`;
   }
   function markup(){layout=pick();const p=period();return `<div id="login-scene" class="login-scene" data-period="${p}" aria-hidden="true">${contents(p)}</div>`;}
   function stop(){if(timer!==null){clearTimeout(timer);timer=null;}removeVisibility?.();removeVisibility=null;active=null;}

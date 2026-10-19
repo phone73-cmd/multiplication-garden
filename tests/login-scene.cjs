@@ -18,9 +18,9 @@ console.log('Login scene: local 06/16/19 boundaries, day/night assets, 2/3 grass
 
 const at=(h,m=0)=>api.orbit({getHours:()=>h,getMinutes:()=>m,getSeconds:()=>0});
 assert.equal(at(6).kind,'sun');assert.equal(at(6).progress,0);assert.equal(at(12,30).progress,.5);assert.equal(at(19).kind,'moon');assert.equal(at(19).progress,0);assert.equal(at(0,30).progress,.5);assert(at(5,59).progress>.99);assert(at(18,59).progress>.99);
-assert.equal(parseFloat(at(12,30).top),12);assert.equal(parseFloat(at(0,30).top),12);assert.equal(parseFloat(at(6).top),64);assert.equal(parseFloat(at(19).top),64);
+assert.equal(parseFloat(at(12,30).top),10);assert.equal(parseFloat(at(0,30).top),10);assert.equal(parseFloat(at(6).top),38);assert.equal(parseFloat(at(19).top),38);
 for(const hours of [[6,7,8,9,10,11,12,13,14,15,16,17,18],[19,20,21,22,23,0,1,2,3,4,5]]){
- let previous=-1;for(const h of hours){const p=at(h);assert(p.progress>previous);assert(p.progress>=0&&p.progress<=1);assert(parseFloat(p.top)>=12&&parseFloat(p.top)<=64);previous=p.progress;}
+ let previous=-1;for(const h of hours){const p=at(h);assert(p.progress>previous);assert(p.progress>=0&&p.progress<=1);assert(parseFloat(p.top)>=10&&parseFloat(p.top)<=38);previous=p.progress;}
 }
 const coords={};host.querySelector=()=>({style:{setProperty:(name,value)=>coords[name]=value}});hour=10;api.markup();api.bind(root);const before=coords['--orbit-left'];hour=11;visibility.get('visibilitychange')();assert.notEqual(coords['--orbit-left'],before);assert.equal(coords['--orbit-left'],at(11).left);assert.equal(jobs.size,1);assert([...jobs.values()].every(job=>job.delay>0&&job.delay<=10000));api.stop();assert.equal(jobs.size,0);
 console.log('Sun/moon orbit: 06/19 switch, left-to-right progress, noon/midnight apex, early-morning wrap, live coordinates and bounded single update timer passed.');
@@ -30,3 +30,11 @@ assert.equal(lanes.length,2);assert.notEqual(lanes[0]['--duration'],lanes[1]['--
 for(const lane of lanes){const start=parseFloat(lane['--lane-left'])/100,distance=parseFloat(lane['--distance'])/100;assert(distance>=.4&&distance<=.6);for(const width of [220,280,320,360,460])for(const progress of [0,.1,.5,.9,1]){const left=width*(start+distance*progress);assert(left>=0);assert(left+48<=width);}}
 api.bind(root);const stable=host.innerHTML;hour=11;visibility.get('visibilitychange')();assert.equal(host.innerHTML,stable);hour=16;visibility.get('visibilitychange')();assert(host.innerHTML.includes('scene-flight-lane'));hour=19;visibility.get('visibilitychange')();assert(!host.innerHTML.includes('scene-flight-lane'));assert(host.innerHTML.includes('moth.webp'));api.stop();assert.equal(jobs.size,0);
 console.log('Daytime flights: 44/58% garden-width travel, separate height/speed/reverse start, 5 viewport widths stay within bounds, clock updates do not restart flights and night route unchanged passed.');
+
+// Decorative clouds stay above the celestial layer; the expanded sky separates flowers and sun/moon.
+hour=10;const withClouds=api.markup();assert.equal((withClouds.match(/class="scene-cloud scene-cloud-/g)||[]).length,2);assert.equal((withClouds.match(/src="assets\/login-scene\/cloud.webp"/g)||[]).length,2);
+const htmlSource=fs.readFileSync(__dirname+'/../index.html','utf8'),appSource=fs.readFileSync(__dirname+'/../app.js','utf8');
+assert(appSource.includes('<h1 id="login-title" lang="en">Jian’s Learning Garden</h1>'));assert(!appSource.includes('garden-cloud cloud-one'));assert(htmlSource.includes('.login-sky{height:305px}'));assert(htmlSource.includes('.login-sky{height:280px}'));assert(htmlSource.includes('.scene-celestial{z-index:1}'));assert(htmlSource.includes('z-index:2;opacity:.9'));assert(htmlSource.includes('white-space:nowrap;margin:12px 0'));
+for(let h=0;h<24;h++)for(let m=0;m<60;m++)assert(parseFloat(at(h,m).top)+65<280-8-151-4);
+const cloud=fs.readFileSync(__dirname+'/../assets/login-scene/cloud.webp');assert.equal(cloud.toString('ascii',0,4),'RIFF');assert.equal(cloud.readUInt32LE(4)+8,cloud.length);assert(sw.includes('./assets/login-scene/cloud.webp'));
+console.log('Expanded sky: single-line English title, 70px sky growth, 2 existing clouds in front, all-minute celestial bounds clear of flower heads and offline cloud asset passed.');
