@@ -1,4 +1,4 @@
-/* 받아쓰기 공책 · 배움정원 v2.0.0: native document module, one page scroll. */
+/* 받아쓰기 공책 · 배움정원 v2.0.1: native document module, one page scroll. */
 window.GardenDictation = {
   mount(host){
     const view=host.attachShadow({mode:'open'}),disposers=[],timers=new Set();

@@ -117,5 +117,11 @@
   "./storage.js",
   "./assets/fonts/fonts.css",
   "./assets/fonts/gowun-dodum.woff",
-  "./assets/fonts/jua.woff"
+  "./assets/fonts/jua.woff",
+  "./assets/status/badge-ready.webp",
+  "./assets/status/badge-unavailable.webp",
+  "./assets/status/device-base.webp",
+  "./assets/status/network-base.webp",
+  "./assets/status/network-slash.webp",
+  "./assets/status/offline-guide.webp"
 ]

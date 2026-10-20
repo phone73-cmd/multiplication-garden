@@ -4,7 +4,7 @@ const scope=self.registration.scope;
 const markerURL=new URL('./.offline-bundle-ready',scope).href;
 const entries=new Map(RELEASE.files.map(file=>[new URL(file.path,scope).href,file]));
 const home=new URL('./index.html',scope).href;
-const report=async data=>{for(const client of await self.clients.matchAll({type:'window',includeUncontrolled:true}))if(client.url.startsWith(scope))client.postMessage({...data,version:RELEASE.version});};
+const report=async data=>{for(const client of await self.clients.matchAll({type:'window',includeUncontrolled:true}))if(client.url.startsWith(scope))client.postMessage({...data,version:RELEASE.version,bundle:RELEASE.id});};
 const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
 async function valid(response,file){return !!response&&response.ok&&(await digest(await response.clone().arrayBuffer()))===file.sha256;}
 async function download(url,file){
@@ -32,7 +32,7 @@ async function prepare(repair=false){
 async function status(){
   const cache=await caches.open(CACHE_NAME);let done=0;
   for(const [url,file]of entries)if(await valid(await cache.match(url),file))done++;
-  return {type:done===entries.size?'GARDEN_READY':'GARDEN_INCOMPLETE',done,total:entries.size,version:RELEASE.version};
+  return {type:done===entries.size?'GARDEN_READY':'GARDEN_INCOMPLETE',done,total:entries.size,version:RELEASE.version,bundle:RELEASE.id};
 }
 self.addEventListener('install',event=>{
   event.waitUntil(prepare().catch(async error=>{
@@ -66,7 +66,7 @@ self.addEventListener('fetch',event=>{
 let repairing=null;
 self.addEventListener('message',event=>{
   if(!event.source?.url?.startsWith(scope))return;
-  const reply=data=>event.source.postMessage({...data,version:RELEASE.version});
+  const reply=data=>event.source.postMessage({...data,version:RELEASE.version,bundle:RELEASE.id,requestId:event.data?.requestId});
   const action=async()=>{
     if(event.data?.type==='GARDEN_STATUS')reply(await status());
     if(event.data?.type==='GARDEN_REPAIR'){
@@ -78,6 +78,7 @@ self.addEventListener('message',event=>{
       if(tabs.length>1){reply({type:'GARDEN_BLOCKED',message:'다른 배움정원 창을 닫은 뒤 적용해 주세요.'});return;}
       const current=await status();
       if(current.type!=='GARDEN_READY'){reply(current);return;}
+      reply({type:'GARDEN_APPLY_ACCEPTED'});
       await self.skipWaiting();
     }
     if(event.data?.type==='GARDEN_HEALTHY'&&event.data.version===RELEASE.version){

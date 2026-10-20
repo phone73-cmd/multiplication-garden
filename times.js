@@ -1,4 +1,4 @@
-/* 구구단 연습 v2.0.0: picture learning and optional gentle per-question countdown. */
+/* 구구단 연습 v2.0.1: picture learning and optional gentle per-question countdown. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){

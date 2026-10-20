@@ -1,4 +1,4 @@
-/* 배움정원 v2.0.0 — explicit theme choices and Samsung supported schemes. */
+/* 배움정원 v2.0.1 — explicit theme choices and Samsung supported schemes. */
 window.GardenAppearance=(()=>{
 const palettes=[
   { id: "pink", name: "벚꽃 분홍",
