@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.36: a remembered mood, resolved by the visible draw before admission. */
+/* 배움정원 v2.0.0: a remembered mood, resolved by the visible draw before admission. */
 window.GardenMood=(()=>{
   const items=[
   {
@@ -153,7 +153,7 @@ window.GardenMood=(()=>{
   const validMessages=value=>value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([mood,bag])=>keys.includes(mood)&&bag&&Number.isInteger(bag.last)&&bag.last>=0&&bag.last<10&&Array.isArray(bag.remaining)&&bag.remaining.length<=9&&new Set(bag.remaining).size===bag.remaining.length&&bag.remaining.every(i=>Number.isInteger(i)&&i>=0&&i<10&&i!==bag.last));
   const valid=value=>value&&typeof value==='object'&&!Array.isArray(value)&&[...keys,'random'].includes(value.choice)&&keys.includes(value.current)&&(value.messages===undefined||validMessages(value.messages));
   const initial=()=>({choice:'greeting',current:'greeting'});
-  function read(){try{const value=JSON.parse(localStorage.getItem(key));return valid(value)?{choice:value.choice,current:value.current,messages:value.messages||{}}:initial();}catch{return initial();}}
+  function read(){try{const value=JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key));return valid(value)?{choice:value.choice,current:value.current,messages:value.messages||{}}:initial();}catch{return initial();}}
   let state=read(),activeCaption=null;
   function leaveWelcome(){activeCaption=null;}
   function caption(){
@@ -169,7 +169,7 @@ window.GardenMood=(()=>{
     const index=remaining.pop();bags[mood]={remaining,last:index};save();
     activeCaption={mood,text:encouragement[mood][index]};return activeCaption.text;
   }
-  function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{}}
+  function save(){try{(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(key,JSON.stringify(state));}catch{}}
   function choose(choice){
     if(![...keys,'random'].includes(choice))return false;
     state.choice=choice;if(choice!=='random')state.current=choice;save();return true;

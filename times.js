@@ -1,4 +1,4 @@
-/* 구구단 연습 v1.8.36: picture learning and optional gentle per-question countdown. */
+/* 구구단 연습 v2.0.0: picture learning and optional gentle per-question countdown. */
 const TimesEngine={
   shuffle(items){const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;},
   makeQueue(dans,count,ordered=false){
@@ -14,7 +14,7 @@ const TimesEngine={
     }return out;
   },
   validFacts(value){return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([key,r])=>/^[2-9]x[1-9]$/.test(key)&&r&&Number.isSafeInteger(r.attempts)&&r.attempts>=1&&Number.isSafeInteger(r.wrong)&&r.wrong>=0&&r.wrong<=r.attempts&&Number.isSafeInteger(r.streak)&&r.streak>=0&&r.streak<=r.attempts&&r.streak<=r.attempts-r.wrong&&typeof r.last==='string'&&Number.isFinite(Date.parse(r.last)));},
-  readFacts(){const raw=localStorage.getItem('garden-times-facts'),value=raw===null?{}:JSON.parse(raw);if(!this.validFacts(value))throw Error('구구단 오답 기록을 읽지 못했어요.');return value;},
+  readFacts(){const raw=(globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))('garden-times-facts'),value=raw===null?{}:JSON.parse(raw);if(!this.validFacts(value))throw Error('구구단 오답 기록을 읽지 못했어요.');return value;},
   weakFacts(facts,dans){return Object.entries(facts).filter(([key,r])=>dans.includes(Number(key.split('x')[0]))&&r.wrong>0&&r.streak<3).map(([key,r])=>{const [a,b]=key.split('x').map(Number);return {a,b,priority:4*r.wrong/r.attempts+1/(r.streak+1)+Math.min(r.wrong,10)/10};});},
   weakQueue(facts,dans,count){return this.shuffle(this.weakFacts(facts,dans)).sort((a,b)=>b.priority-a.priority).slice(0,count).map(({a,b})=>({a,b}));},
   recordFact(facts,q,first){const key=q.a+'x'+q.b,prev=facts[key]||{attempts:0,wrong:0,streak:0};return {...facts,[key]:{attempts:prev.attempts+1,wrong:prev.wrong+(first?0:1),streak:first?prev.streak+1:0,last:new Date().toISOString()}};},
@@ -23,7 +23,7 @@ const TimesEngine={
 };
 const TimesModes=[['learn','🌷','곱셈 익히기'],['ordered','🔢','순서대로 풀기'],['mixed','🎲','섞어서 풀기'],['weak','🌱','틀린문제 풀기']];
 const TimesGarden={
-  mode:'learn',dans:[2],count:10,timeLimit:(()=>{try{const n=Number(localStorage.getItem('garden-times-seconds'));return [0,5,10].includes(n)?n:0;}catch{return 0;}})(),phase:'home',queue:[],records:[],index:0,tries:0,done:false,retry:false,saved:false,saveError:false,
+  mode:'learn',dans:[2],count:10,timeLimit:(()=>{try{const n=Number((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))('garden-times-seconds'));return [0,5,10].includes(n)?n:0;}catch{return 0;}})(),phase:'home',queue:[],records:[],index:0,tries:0,done:false,retry:false,saved:false,saveError:false,
   active(){return screen==='times'&&this.phase==='quiz';},
   open(){if(!authenticated)return login();stopDictation();screen='times';setStudyScreen(screen);this.phase='home';this.home();window.scrollTo(0,0);},
   home(){
@@ -39,7 +39,7 @@ const TimesGarden={
     const count=document.querySelector('#times-count');if(count)count.onchange=()=>{this.count=Number(count.value);if(this.mode==='weak')this.home();};
     const seconds=document.querySelector('#times-seconds');if(seconds)seconds.onchange=()=>{
       const value=Number(seconds.value);if(![0,5,10].includes(value))return;
-      this.timeLimit=value;try{localStorage.setItem('garden-times-seconds',String(value));}catch{}
+      this.timeLimit=value;try{(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))('garden-times-seconds',String(value));}catch{}
     };
     document.querySelector('#times-start').onclick=()=>{
       if(!this.dans.length)return;
@@ -85,7 +85,7 @@ const TimesGarden={
     const correct=TimesEngine.check(q,input.value);this.tries++;
     if(!correct&&this.tries===1){this.feedbackHint=true;feedback.textContent='한 번 더 생각해 볼까요?';input.value='';return;}
     this.pauseClock();this.done=true;this.paintClockFrame();this.records.push({...q,first:correct&&this.tries===1,second:correct&&this.tries===2});
-    try{localStorage.setItem('garden-times-facts',JSON.stringify(TimesEngine.recordFact(TimesEngine.readFacts(),q,correct&&this.tries===1)));}catch{this.saveError=true;}
+    try{(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))('garden-times-facts',JSON.stringify(TimesEngine.recordFact(TimesEngine.readFacts(),q,correct&&this.tries===1)));}catch{this.saveError=true;}
     feedback.textContent=correct?(this.tries===1?'맞았어요! 🌼':'다시 풀어 맞혔어요! 🌱'):`${q.a} × ${q.b} = ${q.a*q.b}입니다. 그림으로 확인해요.`;
     input.disabled=true;document.querySelector('#times-check').hidden=true;document.querySelectorAll('[data-key]').forEach(el=>el.disabled=true);
     if(!correct)document.querySelector('#times-help').innerHTML=`${this.picture(q.a,q.b)}<p>${q.a}개씩 ${q.b}묶음은 ${q.a*q.b}개예요.</p><p class="times-sum">${Array(q.b).fill(q.a).join(' + ')} = ${q.a*q.b}</p>`;
@@ -172,7 +172,7 @@ const TimesGarden={
   scheduleAdvance(){if(this.nextTimer)clearTimeout(this.nextTimer);this.nextTimer=setTimeout(()=>{this.nextTimer=null;if(this.phase==='quiz'&&this.done)this.advance();},800);},
   finish(){
     this.clockResizeObserver?.disconnect();this.pauseClock();this.phase='result';window.GardenNav?.sync('times-result');const first=this.records.filter(r=>r.first).length,second=this.records.filter(r=>r.second).length;
-    if(!this.saved&&!this.retry){this.saved=true;try{const old=readStudyValue('garden-times-history',[]);if(!TimesEngine.validHistory(old))throw Error('기록 형식');localStorage.setItem('garden-times-history',JSON.stringify([...old,{id:this.id,date:new Date().toISOString(),total:this.queue.length,first,second}]));}catch{this.saveError=true;}}
+    if(!this.saved&&!this.retry){try{const old=readStudyValue('garden-times-history',[]);if(!TimesEngine.validHistory(old))throw Error('기록 형식');const record={id:this.id,date:old.find(r=>r.id===this.id)?.date||new Date().toISOString(),total:this.queue.length,first,second};(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))('garden-times-history',JSON.stringify([...old.filter(r=>r.id!==this.id),record]));this.saved=true;}catch{this.saved=false;this.saveError=true;}}
     this.wrong=this.records.filter(r=>!r.first);
     app.innerHTML=`<section class="panel times">${this.viewHeader('끝까지 해냈어요! 🌻',`<p class="eyebrow times-progress">${this.retry?'다시 연습 완료':'오늘도 한 걸음 성장했어요'}</p>`,'h1')}<p>처음에 맞힌 문제 <strong>${first}개</strong><br>다시 풀어 맞힌 문제 <strong>${second}개</strong><br>정답을 함께 확인한 문제 <strong>${this.queue.length-first-second}개</strong></p>${this.saveError?'<p role="alert">기록을 저장하지 못했어요. 현재 결과는 아래에서 확인할 수 있어요.</p>':''}${this.wrong.length?'<div class="actions"><button id="times-retry">틀린 문제 다시 풀기</button></div>':''}${this.wrong.length?`<h2>다시 살펴볼 식</h2><p class="muted">처음에 틀렸던 문제를 모았어요.</p>${this.wrong.map(q=>`<p>${q.a} × ${q.b} = ${q.a*q.b}</p>`).join('')}`:'<p>모두 처음에 맞혔어요! 🌼</p>'}</section>`;
     this.bindHome();const retry=document.querySelector('#times-retry');if(retry)retry.onclick=()=>this.start(this.wrong,true);

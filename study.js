@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v1.8.36 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v2.0.0 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -11,7 +11,7 @@ function setStudyScreen(name){
   const button=document.querySelector('#study-home');if(button)button.hidden=name==='login'||name==='hub';
   const route={login:'login',hub:'hub',home:'math-home',quiz:'math-quiz',result:'math-result'}[name];if(route)window.GardenNav?.sync(route);
 }
-function readStudyValue(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
+function readStudyValue(key,fallback){try{return JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key))??fallback;}catch{return fallback;}}
 function stopDictation(){if(dictationController){dictationController.destroy();dictationController=null;}}
 function requestStudyRoute(route,fallback){
   if(window.GardenNav?.request)return window.GardenNav.request(route);
@@ -159,11 +159,11 @@ async function exportStudy(){
   const notice=document.querySelector('#backup-notice');
   let text;
   try{
-    const data={};for(const key of studyBackupKeys){const raw=localStorage.getItem(key);if(raw!==null)data[key]=JSON.parse(raw);}
+    const data={};for(const key of studyBackupKeys){const raw=(globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'1.8.36',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'2.0.0',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v1.8.36-backup.json';
+  const filename='learning-garden-v2.0.0-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -184,9 +184,13 @@ async function exportStudy(){
 }
 
 function applyStudyBackup(data){
-  const before={};for(const key of Object.keys(data))before[key]=localStorage.getItem(key);
-  try{for(const [key,value]of Object.entries(data))localStorage.setItem(key,JSON.stringify(value));}
-  catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch{}}throw e;}
+  if(globalThis.window?.GardenStorage?.transaction){
+    window.GardenStorage.transaction(Object.fromEntries(Object.entries(data).map(([key,value])=>[key,JSON.stringify(value)])));
+  }else{
+  const before={};for(const key of Object.keys(data))before[key]=(globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key);
+  try{for(const [key,value]of Object.entries(data))(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(key,JSON.stringify(value));}
+  catch(e){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else (globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(key,value);}catch{}}throw e;}
+  }
   if(Object.hasOwn(data,'garden-times-seconds')&&typeof TimesGarden!=='undefined')TimesGarden.timeLimit=data['garden-times-seconds'];
   if(data['garden-history'])history=data['garden-history'];
   hubExpressions=null;

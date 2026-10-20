@@ -5,7 +5,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));const shuffle=a=>a.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);
 let qs=[],answers=[],pos=0,reviewMode=false,history=[],screen='login',authenticated=false,scoreSavedForRun=false,manualChecks={},runId='';
 try{authenticated=sessionStorage.getItem('garden-authenticated')==='yes';}catch{}
-try{const saved=JSON.parse(localStorage.getItem('garden-history')||'[]');if(Array.isArray(saved))history=saved.filter(h=>h&&Number.isFinite(h.score));}catch{}
+try{const saved=JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))('garden-history')||'[]');if(Array.isArray(saved))history=saved.filter(h=>h&&Number.isFinite(h.score));}catch{}
 function home(){if(!authenticated)return login();screen='home';setStudyScreen(screen);app.innerHTML=`<div class="hero"><div><span class="eyebrow">오늘도 한 뼘 자라는 수학</span><h1>생각하는 곱셈,<br>자신감이 활짝!</h1><p>그림부터 설명까지 19가지 유형을 연습해요.<br>틀려도 괜찮아요. 다시 풀며 함께 배워요.</p></div>${gardenBloomMarkup()}</div><section class="panel"><div class="topline"><h2>나만의 단원평가</h2><span class="muted">시간 제한 없음</span></div><div class="settings"><label>연습할 단<select id="dan"><option value="all">2~9단 골고루</option>${Array.from({length:8},(_,i)=>`<option>${i+2}</option>`).join('')}</select></label><label>문제 수<select id="count"><option>10</option><option>20</option><option>30</option></select></label><label>문제 유형<select id="type"><option value="mix">19가지 골고루</option>${typeOrder.map((t,i)=>`<option value="${t}">${i+1}. ${names[t]}</option>`).join('')}</select></label><button id="start">평가 시작하기 →</button></div><p class="muted assessment-intro">다양한 곱셈 문제를 골고루 풀어 봐요. 설명 문제는 보호자와 함께 확인해요.</p></section><div class="stats"><div class="stat"><span class="muted">완료한 평가</span><strong>${history.length}회</strong></div><div class="stat"><span class="muted">최고 점수</span><strong>${history.length?Math.max(...history.map(h=>h.score)):0}점</strong></div><div class="stat"><span class="muted">최근 평가</span><strong>${history.length?history.at(-1).score+'점':'첫 도전'}</strong></div></div><p class="muted assessment-storage">학습 기록은 이 브라우저에 저장돼요.</p>`;document.querySelector('#start').onclick=start}
 const field=(label,value)=>({label,value});
 const lifeScenes=[
@@ -170,7 +170,7 @@ function saveRun(score){
   qs.forEach((q,i)=>{if(!Number.isInteger(q.a)||q.a<2||q.a>9||q.t===6)return;const r=danStats[q.a]||(danStats[q.a]={attempts:0,wrong:0});r.attempts++;if(answerState(q,answers[i])!=='good')r.wrong++;});
   const existing=history.findIndex(h=>h.id===runId),record={id:runId,score,date:existing>=0?history[existing].date:new Date().toISOString(),danStats,bloomPeak:Math.max(score,existing>=0?(history[existing].bloomPeak??history[existing].score):0)};
   if(existing>=0)history[existing]=record;else history.push(record);
-  scoreSavedForRun=true;try{localStorage.setItem('garden-history',JSON.stringify(history));}catch{}
+  try{(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))('garden-history',JSON.stringify(history));scoreSavedForRun=true;}catch{scoreSavedForRun=false;}
 }
 function result(){
   if(!authenticated)return login();
@@ -197,4 +197,4 @@ function installPullToRefresh(){const indicator=document.createElement('div'),fi
 
 function startGarden(){if(authenticated&&window.GardenSession?.restore())return;if(!authenticated)window.GardenSession?.clear();authenticated?hub():login();}
 installPullToRefresh();startGarden();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+// Service worker lifecycle is managed by offline.js.

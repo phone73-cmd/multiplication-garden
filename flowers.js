@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.36: choose a new flower only on successful admission. */
+/* 배움정원 v2.0.0: choose a new flower only on successful admission. */
 window.GardenFlowers=(()=>{
   const items=[
   {
@@ -84,9 +84,9 @@ window.GardenFlowers=(()=>{
 ];
   const storageKey='garden-welcome-flower';
   const valid=value=>!!value&&typeof value==='object'&&!Array.isArray(value)&&items.some(item=>item.key===value.current);
-  function read(){try{const saved=JSON.parse(localStorage.getItem(storageKey));return valid(saved)?{current:saved.current}:null;}catch{return null;}}
+  function read(){try{const saved=JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(storageKey));return valid(saved)?{current:saved.current}:null;}catch{return null;}}
   let state=read(),loginPair=null;
-  function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{}}
+  function save(){try{(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(storageKey,JSON.stringify(state));}catch{}}
   function enter(){loginPair=null;const choices=items.filter(item=>item.key!==state?.current);state={current:choices[Math.floor(Math.random()*choices.length)].key};save();return current();}
   function current(){if(!state)enter();return items.find(item=>item.key===state.current);}
   function markup(){const flower=current();return '<figure class="welcome-flower"><img src="'+flower.src+'" alt="'+flower.name+' 꽃" width="512" height="512" decoding="async"><figcaption>'+flower.name+'</figcaption></figure>';}

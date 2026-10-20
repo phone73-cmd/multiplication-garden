@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.36: shared transparent illustrations, without changing question data. */
+/* 배움정원 v2.0.0: shared transparent illustrations, without changing question data. */
 window.GardenIcons=(()=>{
   const catalog=[
   {

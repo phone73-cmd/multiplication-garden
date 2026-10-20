@@ -40,13 +40,7 @@ function dictationContext(allow,options={}){
  // Drafts survive both the child's refresh and parent-triggered refresh policy.
  elements.get('settings').hidden=false;elements.get('home').hidden=true;elements.get('quiz').hidden=true;elements.get('ed0').value='작성 중인 문장';await api.refreshApp();assert.equal(elements.get('ed0').value,'작성 중인 문장');
  assert(!moduleSource.includes('serviceWorker.register'));assert(!moduleSource.includes('caches.delete'));assert.equal(fixture.window.dictationHasDraft(),true);
- // Scoped worker must leave another GitHub Pages app's cache and requests alone.
- const events={},deleted=[];let fetchCalls=0;
- const scope='https://example.test/multiplication-garden/';
- const worker=vm.createContext({URL,Set,Response,self:{registration:{scope},clients:{claim(){}},skipWaiting(){},addEventListener:(name,fn)=>events[name]=fn},caches:{keys:async()=>['learning-garden-v1.5.0','learning-garden-v1.8.36','dictation-note-v1.1.4','other-app'],delete:async key=>deleted.push(key),open:async()=>({match:async()=>new Response('cached'),put:async()=>{}})},fetch:async()=>{fetchCalls++;throw Error('offline');}});
- const workerSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert(workerSource.includes("'./times.js'"));assert(workerSource.includes('learning-garden-v1.8.36'));vm.runInContext(workerSource,worker);let activation;events.activate({waitUntil:p=>activation=p});await activation;assert.deepEqual(deleted,['learning-garden-v1.5.0']);
- let fallback;events.fetch({request:{method:'GET',url:scope+'dictation/dictation.js?v=1.8.36'},respondWith:p=>fallback=p});assert.equal(await(await fallback).text(),'cached');
- events.fetch({request:{method:'GET',url:'https://example.test/other-app/index.html'},respondWith(){throw Error('intercepted another app');}});assert.equal(fetchCalls,1);
+ // Worker install/fetch/update coverage lives in tests/offline-worker.cjs.
  // Import validation plus rollback on a failed second storage write.
  const values=new Map([['garden-history','[{"score":70,"date":"old"}]'],['dictation-best','{"1":6}']]);let fail=true;
  const shared=vm.createContext({window:{},document:{querySelector:()=>({})},localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(k==='dictation-best'&&fail){fail=false;throw Error('quota');}values.set(k,v);},removeItem:k=>values.delete(k)}});
@@ -55,7 +49,7 @@ function dictationContext(allow,options={}){
  assert.throws(()=>vm.runInContext('applyStudyBackup(validStudyBackup(JSON.stringify(backup)))',shared));assert.equal(JSON.parse(values.get('garden-history'))[0].score,70);assert.equal(JSON.parse(values.get('dictation-best'))['1'],6);
  vm.runInContext('applyStudyBackup(validStudyBackup(JSON.stringify(backup)))',shared);assert.equal(JSON.parse(values.get('garden-history'))[0].score,90);assert.equal(JSON.parse(values.get('dictation-best'))['1'],10);
  fixture.controller.destroy();
- console.log(JSON.stringify({sentences,dictation:'admission, full 10-question controller, scoring, original storage, backup validation, editor limit and draft preservation passed',worker:'other app caches and paths preserved; offline fallback passed',backup:'validation and failed-write rollback passed',result:'passed'}));
+ console.log(JSON.stringify({sentences,dictation:'admission, full 10-question controller, scoring, original storage, backup validation, editor limit and draft preservation passed',worker:'covered in tests/offline-worker.cjs',backup:'validation and failed-write rollback passed',result:'passed'}));
 })().catch(e=>{console.error(e);process.exit(1)});
 // Common appearance migrates legacy choices once, persists, and follows system changes.
 function appearanceFixture(legacy,current){

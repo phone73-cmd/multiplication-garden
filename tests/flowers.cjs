@@ -12,7 +12,7 @@ run('logoutGarden()');f.get('#garden-code').value='0000';f.get('#login-form').on
 const seen=new Set();for(let i=0;i<500;i++){f.ctx.Math.random=()=>((i*37)%500)/500;const old=api.current().key,item=api.enter();assert.notEqual(item.key,old);seen.add(item.key);}assert.equal(seen.size,16);
 const backup={app:'liah-learning-garden',format:1,data:{'garden-welcome-flower':{current:'rose'}}};f.ctx.backupText=JSON.stringify(backup);run('applyStudyBackup(validStudyBackup(backupText));hub()');assert.equal(api.current().name,'장미');
 for(const value of [{current:'bad'},[],null]){f.ctx.backupText=JSON.stringify({...backup,data:{'garden-welcome-flower':value}});assert.throws(()=>run('validStudyBackup(backupText)'));}
-const sw=fs.readFileSync(__dirname+'/../sw.js','utf8');assert(sw.includes("'./flowers.js'"));for(const item of api.items)assert(sw.includes(JSON.stringify('./'+item.src)));
+const sw=fs.readFileSync(__dirname+'/../sw.js','utf8');assert(sw.includes('"./flowers.js"'));for(const item of api.items)assert(sw.includes(JSON.stringify('./'+item.src)));
 const unavailable=new Map();unavailable.set=()=>{throw Error('full');};const restricted=make(unavailable).ctx.window.GardenFlowers;const initial=restricted.enter();assert.notEqual(restricted.enter().key,initial.key);
 console.log('Flowers: 16 names/assets, successful-login-only draw, previous excluded, stable hub/refresh/reload, all flowers reachable, backup validation/restore, storage failure and offline assets passed.');
 

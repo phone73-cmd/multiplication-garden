@@ -1,4 +1,4 @@
-/* 배움정원 v1.8.36 — explicit theme choices and Samsung supported schemes. */
+/* 배움정원 v2.0.0 — explicit theme choices and Samsung supported schemes. */
 window.GardenAppearance=(()=>{
 const palettes=[
   { id: "pink", name: "벚꽃 분홍",
@@ -26,8 +26,8 @@ const palettes=[
   let state;
   function valid(value){return !!value&&['system','light','dark'].includes(value.theme)&&palettes.some(p=>p.id===value.palette);}
   function read(){
-    try{const current=JSON.parse(localStorage.getItem(key));if(valid(current))return {theme:current.theme,palette:current.palette};}catch{}
-    try{const legacy=JSON.parse(localStorage.getItem('dictation-settings'));if(valid(legacy))return {theme:legacy.theme,palette:legacy.palette};}catch{}
+    try{const current=JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key));if(valid(current))return {theme:current.theme,palette:current.palette};}catch{}
+    try{const legacy=JSON.parse((globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))('dictation-settings'));if(valid(legacy))return {theme:legacy.theme,palette:legacy.palette};}catch{}
     return {theme:'system',palette:'mint'};
   }
   function apply(){
@@ -42,7 +42,7 @@ const palettes=[
   }
   function choose(next){
     if(!valid(next))return false;
-    try{localStorage.setItem(key,JSON.stringify(next));}catch{return false;}
+    try{if(globalThis.window?.GardenStorage?.transaction)window.GardenStorage.transaction({[key]:JSON.stringify(next)});else localStorage.setItem(key,JSON.stringify(next));}catch{return false;}
     state={...next};apply();syncControls();return true;
   }
   function open(){
@@ -66,7 +66,7 @@ const palettes=[
   }
   state=read();apply();
   // Store a migrated legacy preference once, without changing subject settings.
-  try{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(state));}catch{}
+  try{if(!(globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key))(globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(key,JSON.stringify(state));}catch{}
   media?.addEventListener?.('change',()=>{if(state.theme==='system')apply();});
   document.querySelector('#appearance-button').onclick=open;
   return {get:()=>({...state}),choose,reload(){state=read();apply();},open};

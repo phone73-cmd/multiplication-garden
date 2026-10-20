@@ -1,4 +1,4 @@
-/* 받아쓰기 공책 · 배움정원 v1.8.36: native document module, one page scroll. */
+/* 받아쓰기 공책 · 배움정원 v2.0.0: native document module, one page scroll. */
 window.GardenDictation = {
   mount(host){
     const view=host.attachShadow({mode:'open'}),disposers=[],timers=new Set();
@@ -28,8 +28,8 @@ const strip = s => s.replace(PUNCT, "");
 
 /* 저장소: 막혀 있어도 앱은 동작한다 */
 const ls = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  get(k, d) { try { const v = (globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { (globalThis.window?.GardenStorage?.set||localStorage.setItem.bind(localStorage))(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 const store = {
   get() { return ls.get("dictation-best", {}); },
@@ -56,7 +56,7 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.hidden = true; }, 1800);
 }
-function saveSettings() { ls.set("dictation-settings", SET); toast("설정을 저장했어요"); }
+function saveSettings() { if(ls.set("dictation-settings", SET))toast("설정을 저장했어요"); else toast("설정을 기기에 저장하지 못했어요"); }
 
 const root = host;
 function effectiveMode() { return SET.mode === "hear" && CAN_SPEAK ? "hear" : "see"; }
@@ -255,21 +255,21 @@ function renderEditor(g, focusIdx) {
 function persistItems() {
   const ov = {};
   DATA.forEach((d, i) => { if (d.items.some((t, k) => t !== DEFAULTS[i][k])) ov[d.g] = d.items; });
-  ls.set("dictation-items", ov);
+  return ls.set("dictation-items", ov);
 }
 function saveEditor() {
   const g = edCur, d = DATA[g - 1];
   d.items = d.items.map((_, i) => { const v = $("ed" + i).value.trim().slice(0,100); return v || DEFAULTS[g - 1][i]; });
-  persistItems();
-  renderEditor(g);
-  $("edStatus").textContent = g + "급 문장을 저장했어요.";
+  const saved=persistItems();
+  if(saved)renderEditor(g);
+  $("edStatus").textContent = saved ? g + "급 문장을 저장했어요." : "기기에 저장하지 못했어요. 입력은 유지돼요. 다시 저장하거나 문장을 백업해 주세요.";
 }
 function resetEditor() {
   const g = edCur;
   DATA[g - 1].items = DEFAULTS[g - 1].slice();
-  persistItems();
+  const saved=persistItems();
   renderEditor(g);
-  $("edStatus").textContent = g + "급 문장을 처음 상태로 초기화했어요.";
+  $("edStatus").textContent = saved ? g + "급 문장을 처음 상태로 초기화했어요." : "변경 내용을 기기에 저장하지 못했어요. 창을 닫기 전에 다시 저장해 주세요.";
 }
 /* 문장 백업: 고친 급수만 글로 내보내고, 붙여 넣어 가져온다 */
 function setBk(msg, err) { const el = $("bkStatus"); el.textContent = msg; el.classList.toggle("err", !!err); }
@@ -332,9 +332,9 @@ function importText(text) {
   const gs = Object.keys(parsed);
   askConfirm(gs.length + "개 급수를 가져올까요?", "이 기기의 " + gs.map(g => g + "급").join(", ") + " 문장이 파일의 문장으로 바뀌어요.", "가져오기", () => {
     gs.forEach(g => { DATA[g - 1].items = parsed[g]; });
-    persistItems();
+    const saved=persistItems();
     renderEditor(edCur);
-    setBk(gs.length + "개 급수를 가져왔어요.");
+    setBk(saved ? gs.length + "개 급수를 가져왔어요." : "문장을 읽었지만 기기에 저장하지 못했어요. 다시 저장하거나 내보내 주세요.",!saved);
   });
 }
 function importFile(file) {
@@ -574,10 +574,14 @@ function say(text) {
   try {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "ko-KR"; u.rate = .75;
-    const v = SET.voice && koVoices().find(x => x.voiceURI === SET.voice);
+    const voices=koVoices(),offline=navigator.onLine===false;
+    const preferred=voices.find(x=>x.voiceURI===SET.voice);
+    const v=offline?(preferred?.localService?preferred:voices.find(x=>x.localService)):preferred;
+    if(offline&&!v){toast("오프라인 읽기에는 기기에 설치된 한국어 음성이 필요해요. 보고 쓰기는 계속할 수 있어요.");return;}
     if (v) { u.voice = v; u.lang = v.lang; }
+    u.onerror=event=>{if(!["canceled","interrupted"].includes(event.error))toast("소리를 읽지 못했어요. 기기 음성을 확인하거나 보고 쓰기를 이용해 주세요.");};
     speechSynthesis.cancel(); speechSynthesis.speak(u);
-  } catch (e) {}
+  } catch (e) { toast("소리를 읽을 수 없어요. 보고 쓰기는 계속할 수 있어요."); }
 }
 function speak() { say(S.grade.items[S.order[S.idx]]); }
 

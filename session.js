@@ -26,7 +26,7 @@ window.GardenSession=(()=>{
       if(screen==='dictation')state.dictation=dictationController?.snapshot();
       if(screen==='hub')state.appearance=!!document.querySelector('#appearance-dialog')?.open;
       sessionStorage.setItem(key,JSON.stringify(state));
-    }catch{}finally{saving=false;}
+    }catch{globalThis.window?.GardenStorage?.warn("풀던 문제의 임시 상태를 저장하지 못했어요. 새로고침·창 종료 전에 학습을 마쳐 주세요.");}finally{saving=false;}
   }
   function validMath(m){
     if(!m||!list(m.qs,30)||!m.qs.length||!list(m.answers,30)||m.answers.length!==m.qs.length||!integer(m.pos,0,m.qs.length-1)||typeof m.runId!=='string'||m.runId.length>100||typeof m.reviewMode!=='boolean'||typeof m.scoreSavedForRun!=='boolean'||!m.manualChecks||Object.values(m.manualChecks).some(x=>typeof x!=='boolean'))return false;
