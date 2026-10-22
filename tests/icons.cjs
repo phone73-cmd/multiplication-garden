@@ -37,5 +37,5 @@ for(const [file,size] of [['apple-touch-icon.png',180],['icon-192.png',192],['ic
 }
 assert(installManifest.icons.some(i=>i.purpose==='maskable'&&i.src.includes('icon-maskable-512.png')));
 assert.equal(installManifest.icons.filter(i=>i.purpose==='any').length,2);
-const installHtml=fs.readFileSync(root+'/index.html','utf8');assert(installHtml.includes('apple-touch-icon.png?v=2.0.2'));assert(installHtml.includes('manifest.webmanifest?v=2.0.2'));
+const installHtml=fs.readFileSync(root+'/index.html','utf8');assert(installHtml.includes('apple-touch-icon.png?v=2.0.3'));assert(installHtml.includes('manifest.webmanifest?v=2.0.3'));
 console.log('43 icons: complete asset mapping, variation selectors, unchanged picture count/text, input/option/SVG preservation, image fallback, shadow root cleanup and offline inclusion passed.');

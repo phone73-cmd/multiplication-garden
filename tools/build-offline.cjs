@@ -1,6 +1,6 @@
 // Run after every source/asset change. sw.js is generated; no network needed.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const root=path.join(__dirname,'..'),version='2.0.2';
+const root=path.join(__dirname,'..'),version='2.0.3';
 const files=JSON.parse(fs.readFileSync(path.join(__dirname,'offline-files.json'),'utf8'));
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const manifest=files.map(file=>{const bytes=fs.readFileSync(path.join(root,file));if(!bytes.length)throw Error('Empty asset: '+file);return {path:file,sha256:sha(bytes),bytes:bytes.length};});

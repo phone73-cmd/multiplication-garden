@@ -11,7 +11,7 @@ function fixture(supported=true){
  const document={baseURI:'https://example.test/multiplication-garden/',hidden:false,body:{dataset:{screen:'hub'}},getElementById:nodes,querySelector:selector=>selector==='.common-nav'?nodes('nav'):null,addEventListener:(type,fn)=>events[type]=fn};
  const navigator={onLine:true,storage:{persist:async()=>false,estimate:async()=>({usage:1024})}};if(supported)navigator.serviceWorker=serviceWorker;
  let reloads=0;vm.runInNewContext(code,{window,document,navigator,URL,Date,WeakSet,setTimeout(fn,ms){timeouts.set(++seq,{fn,ms});return seq;},clearTimeout:id=>timeouts.delete(id),setInterval(fn,ms){intervals.set(++seq,{fn,ms});return seq;},clearInterval:id=>intervals.delete(id),location:{reload(){reloads++;}}});
- const message=async(data,source=active)=>{events.message({data:{version:source===active?'2.0.2':'2.0.3',bundle:source===active?'current':'next',...data},source});await flush();};
+ const message=async(data,source=active)=>{events.message({data:{version:source===active?'2.0.3':'2.0.4',bundle:source===active?'current':'next',...data},source});await flush();};
  const offer=async()=>{registration.waiting=candidate;await message({type:'GARDEN_READY'},candidate);};
  return {window,document,navigator,registration,candidate,active,serviceWorker,nodes,events,sent,timeouts,intervals,message,offer,get reloads(){return reloads;}};
 }
@@ -43,7 +43,7 @@ async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
  g.navigator.onLine=true;g.events.online();await flush();assert(g.sent.some(m=>m.type==='GARDEN_REPAIR'));
  await g.nodes('offline-storage').onclick();assert(g.nodes('offline-storage-info').textContent.includes('백업'));
  // A takeover by another window never reloads an in-progress lesson automatically.
- g.document.body.dataset.screen='quiz';await g.message({type:'GARDEN_READY',version:'2.0.3'});assert.equal(g.reloads,0);assert(!g.nodes('offline-update').hidden);
+ g.document.body.dataset.screen='quiz';await g.message({type:'GARDEN_READY',version:'2.0.4'});assert.equal(g.reloads,0);assert(!g.nodes('offline-update').hidden);
  g.document.body.dataset.screen='hub';await g.nodes('offline-update').onclick();assert.equal(g.reloads,1);
  const h=fixture(false);await flush();assert(h.nodes('offline-status').textContent.includes('사용불가'));assert(!h.nodes('app').inert);
  // Actual structural rules, not just fixture nodes.

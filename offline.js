@@ -1,6 +1,6 @@
-/* v2.0.2 — compact combined status, persistent guide, recoverable service-worker activation. */
+/* v2.0.3 — compact combined status, persistent guide, recoverable service-worker activation. */
 window.GardenOffline=(()=>{
-  const version='2.0.2',base=new URL('./',document.baseURI),workerURL=new URL('sw.js',base).href;
+  const version='2.0.3',base=new URL('./',document.baseURI),workerURL=new URL('sw.js',base).href;
   let registration=null,ready=false,progress='',problem='',unsupported=false,lastCheck=0,checking=false;
   let activeVersion='',activeBundle='',candidateVersion='',candidateBundle='',apply=null,reloading=false,applyFailed=false,applySequence=0;
   const watched=new WeakSet(),el=id=>document.getElementById(id),sw=navigator.serviceWorker;
