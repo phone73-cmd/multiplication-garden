@@ -1,6 +1,6 @@
-/* v2.0.1 — fixed status slots, persistent guide, recoverable service-worker activation. */
+/* v2.0.2 — compact combined status, persistent guide, recoverable service-worker activation. */
 window.GardenOffline=(()=>{
-  const version='2.0.1',base=new URL('./',document.baseURI),workerURL=new URL('sw.js',base).href;
+  const version='2.0.2',base=new URL('./',document.baseURI),workerURL=new URL('sw.js',base).href;
   let registration=null,ready=false,progress='',problem='',unsupported=false,lastCheck=0,checking=false;
   let activeVersion='',activeBundle='',candidateVersion='',candidateBundle='',apply=null,reloading=false,applyFailed=false,applySequence=0;
   const watched=new WeakSet(),el=id=>document.getElementById(id),sw=navigator.serviceWorker;
@@ -9,20 +9,17 @@ window.GardenOffline=(()=>{
   const needsReload=()=>newer(activeVersion,version);
   function paint(){
     const online=navigator.onLine!==false,canUpdate=!!waiting()||needsReload(),saving=window.GardenStorage?.pending>0;
-    const availability=ready?'오프라인 사용가능':unsupported?'오프라인 사용불가':progress||'오프라인 준비 확인 중';
+    const availability=ready?'오프라인 사용가능':unsupported||problem?'오프라인 사용불가':progress||'오프라인 준비 확인 중';
     const summary=(online?'온라인':'오프라인')+' · '+availability;
     el('offline-status').textContent=summary;
     if(el('offline-live').textContent!==summary)el('offline-live').textContent=summary;
-    el('network-state').setAttribute('aria-label',(online?'온라인':'오프라인')+' · 상태 안내 열기');
-    el('network-state').title=online?'온라인':'오프라인';
-    el('network-slash').hidden=online;
-    el('availability-state').setAttribute('aria-label',availability+' · 상태 안내 열기');
-    el('availability-state').title=availability;
-    el('availability-state').setAttribute('data-preparing',String(!ready&&!problem&&!unsupported));
-    el('badge-ready').hidden=!ready;el('badge-unavailable').hidden=ready;
+    el('offline-help').setAttribute('data-online',String(online));
+    el('offline-help').setAttribute('data-ready',String(ready));
+    el('offline-help').setAttribute('data-preparing',String(!ready&&!problem&&!unsupported));
+    el('offline-help').title=summary;
     const attention=canUpdate||!!problem||saving;
     el('offline-attention').hidden=!attention;
-    el('offline-help').setAttribute('aria-label',attention?'사용 안내 · 새 버전 또는 확인할 내용 있음':'사용 안내');
+    el('offline-help').setAttribute('aria-label',summary+' · '+(attention?'사용 안내 · 새 버전 또는 확인할 내용 있음':'사용 안내'));
     el('offline-notice').textContent=problem;
     el('offline-progress').textContent=apply?'새 버전 적용 중…':progress;
     el('offline-retry').hidden=ready&&!problem;
@@ -152,7 +149,7 @@ window.GardenOffline=(()=>{
   };
   el('offline-retry').onclick=async()=>{problem='';send('GARDEN_REPAIR',waiting()||sw?.controller||registration?.active);await check(true);paint();};
   el('storage-retry').onclick=()=>{window.GardenStorage?.retry();paint();};
-  for(const id of ['network-state','availability-state','offline-help'])el(id).onclick=()=>panel(id==='offline-help'?el('offline-panel').hidden:true);
+  el('offline-help').onclick=()=>panel(el('offline-panel').hidden);
   el('offline-close').onclick=()=>panel(false,true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('offline-panel').hidden){event.preventDefault();panel(false,true);}});
   document.addEventListener('pointerdown',event=>{if(!el('offline-panel').hidden&&!el('offline-panel').contains(event.target)&&!el('offline-toolbar').contains(event.target))panel(false);});

@@ -1,4 +1,4 @@
-/* 지안이의 배움정원 v2.0.1 — shared entrance and separate learning modules. */
+/* 지안이의 배움정원 v2.0.2 — shared entrance and separate learning modules. */
 let dictationController=null;
 function gardenAccess(){return authenticated&&screen==='dictation';}
 function setStudyScreen(name){
@@ -161,9 +161,9 @@ async function exportStudy(){
   try{
     const data={};for(const key of studyBackupKeys){const raw=(globalThis.window?.GardenStorage?.get||localStorage.getItem.bind(localStorage))(key);if(raw!==null)data[key]=JSON.parse(raw);}
     if(!Object.keys(data).length){notice.textContent='아직 저장된 학습 데이터가 없어요.';return;}
-    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'2.0.1',data},null,2);
+    text=JSON.stringify({app:'liah-learning-garden',format:1,version:'2.0.2',data},null,2);
   }catch(e){notice.textContent=`저장된 학습 데이터를 읽지 못했어요. (${e.name||'읽기 오류'})`;return;}
-  const filename='learning-garden-v2.0.1-backup.json';
+  const filename='learning-garden-v2.0.2-backup.json';
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   // File sharing is optional: lack of support or a denied share must not block export.
   if(ios&&typeof File==='function'&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'){
@@ -209,4 +209,4 @@ async function importStudyFile(event){
 }
 document.querySelector('#study-home').onclick=returnToHub;
 
-const logoutButton=document.querySelector('#logout-button');if(logoutButton)logoutButton.onclick=logoutGarden;
+const logoutButton=document.querySelector('#logout-button');if(logoutButton)logoutButton.onclick=()=>{document.querySelector('#appearance-dialog')?.close?.();logoutGarden();};

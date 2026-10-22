@@ -11,7 +11,7 @@ function fixture(supported=true){
  const document={baseURI:'https://example.test/multiplication-garden/',hidden:false,body:{dataset:{screen:'hub'}},getElementById:nodes,querySelector:selector=>selector==='.common-nav'?nodes('nav'):null,addEventListener:(type,fn)=>events[type]=fn};
  const navigator={onLine:true,storage:{persist:async()=>false,estimate:async()=>({usage:1024})}};if(supported)navigator.serviceWorker=serviceWorker;
  let reloads=0;vm.runInNewContext(code,{window,document,navigator,URL,Date,WeakSet,setTimeout(fn,ms){timeouts.set(++seq,{fn,ms});return seq;},clearTimeout:id=>timeouts.delete(id),setInterval(fn,ms){intervals.set(++seq,{fn,ms});return seq;},clearInterval:id=>intervals.delete(id),location:{reload(){reloads++;}}});
- const message=async(data,source=active)=>{events.message({data:{version:source===active?'2.0.1':'2.0.2',bundle:source===active?'current':'next',...data},source});await flush();};
+ const message=async(data,source=active)=>{events.message({data:{version:source===active?'2.0.2':'2.0.3',bundle:source===active?'current':'next',...data},source});await flush();};
  const offer=async()=>{registration.waiting=candidate;await message({type:'GARDEN_READY'},candidate);};
  return {window,document,navigator,registration,candidate,active,serviceWorker,nodes,events,sent,timeouts,intervals,message,offer,get reloads(){return reloads;}};
 }
@@ -20,7 +20,7 @@ async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
  const f=fixture();await flush();assert(f.sent.some(m=>m.type==='GARDEN_STATUS'));
  await f.message({type:'GARDEN_READY'});assert(f.window.GardenOffline.ready);assert(f.nodes('offline-status').textContent.includes('사용가능'));assert(f.nodes('offline-attention').hidden);
  f.nodes('offline-help').onclick();assert(!f.nodes('offline-panel').hidden);f.nodes('offline-close').onclick();assert(f.nodes('offline-panel').hidden);assert(f.nodes('offline-help').focused);
- f.navigator.onLine=false;f.events.offline();assert(!f.nodes('network-slash').hidden);assert(!f.nodes('badge-ready').hidden);assert(!f.nodes('app').inert);
+ f.navigator.onLine=false;f.events.offline();assert.equal(f.nodes('offline-help').attrs['data-online'],'false');assert.equal(f.nodes('offline-help').attrs['data-ready'],'true');assert(f.nodes('offline-help').attrs['aria-label'].includes('오프라인 · 오프라인 사용가능'));assert(!f.nodes('app').inert);
  await f.offer();assert(!f.nodes('offline-attention').hidden);assert(!f.nodes('offline-update').hidden);
  f.document.body.dataset.screen='quiz';await f.nodes('offline-update').onclick();assert(!f.sent.some(m=>m.type==='GARDEN_APPLY'));
  f.document.body.dataset.screen='hub';f.window.GardenStorage.pending=1;await f.nodes('offline-update').onclick();assert(!f.sent.some(m=>m.type==='GARDEN_APPLY'));
@@ -43,11 +43,19 @@ async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
  g.navigator.onLine=true;g.events.online();await flush();assert(g.sent.some(m=>m.type==='GARDEN_REPAIR'));
  await g.nodes('offline-storage').onclick();assert(g.nodes('offline-storage-info').textContent.includes('백업'));
  // A takeover by another window never reloads an in-progress lesson automatically.
- g.document.body.dataset.screen='quiz';await g.message({type:'GARDEN_READY',version:'2.0.2'});assert.equal(g.reloads,0);assert(!g.nodes('offline-update').hidden);
+ g.document.body.dataset.screen='quiz';await g.message({type:'GARDEN_READY',version:'2.0.3'});assert.equal(g.reloads,0);assert(!g.nodes('offline-update').hidden);
  g.document.body.dataset.screen='hub';await g.nodes('offline-update').onclick();assert.equal(g.reloads,1);
  const h=fixture(false);await flush();assert(h.nodes('offline-status').textContent.includes('사용불가'));assert(!h.nodes('app').inert);
  // Actual structural rules, not just fixture nodes.
- assert.equal((html.match(/class="status-icon"/g)||[]).length,3);assert(html.includes('grid-template-columns:minmax(0,1fr) 132px'));assert(html.includes('width:44px;height:44px'));assert(html.includes('position:absolute;z-index:1200'));
- assert(html.indexOf('id="network-state"')<html.indexOf('id="availability-state"'));assert(html.indexOf('id="availability-state"')<html.indexOf('id="offline-help"'));assert(html.indexOf('id="offline-help"')<html.indexOf('id="offline-panel"'));
- console.log('PASS: 3 fixed slots, paired layers, guide with/without dot, close/Escape, stale waiting removal, pending lesson protection, apply ACK/timeout/retry, missed-event recovery and no unsolicited reload.');
+ assert.equal((html.match(/class="status-icon"/g)||[]).length,1);assert(html.includes('grid-template-columns:minmax(0,1fr) auto 44px'));assert(html.includes('width:44px;height:44px'));assert(html.includes('position:absolute;z-index:1200'));
+ assert(!html.includes('id="network-state"'));assert(!html.includes('id="availability-state"'));
+ assert(html.indexOf('id="offline-help"')<html.indexOf('id="offline-panel"'));
+ assert(html.includes('assets/ui/settings-flower.webp'));assert(!html.match(/<nav class="common-nav">[\s\S]*?id="logout-button"[\s\S]*?<\/nav>/));
+ assert(html.match(/<dialog id="appearance-dialog"[\s\S]*?id="logout-button"/));
+ const k=fixture();await flush();k.navigator.onLine=true;k.events.online();assert.equal(k.nodes('offline-help').attrs['data-ready'],'false');
+ await k.message({type:'GARDEN_READY'});assert.equal(k.nodes('offline-help').attrs['data-ready'],'true');assert.equal(k.nodes('offline-help').attrs['data-online'],'true');
+ k.nodes('offline-help').onclick();k.nodes('offline-help').onclick();assert(k.nodes('offline-panel').hidden);
+ k.nodes('offline-help').onclick();k.events.pointerdown({target:{}});assert(k.nodes('offline-panel').hidden);
+
+ console.log('PASS: one combined status button, independent readiness, flower settings and relocated logout, guide with/without dot, close/Escape, stale waiting removal, pending lesson protection, apply ACK/timeout/retry, missed-event recovery and no unsolicited reload.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

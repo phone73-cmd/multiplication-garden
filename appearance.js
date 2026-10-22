@@ -1,4 +1,4 @@
-/* 배움정원 v2.0.1 — explicit theme choices and Samsung supported schemes. */
+/* 배움정원 v2.0.2 — explicit theme choices and Samsung supported schemes. */
 window.GardenAppearance=(()=>{
 const palettes=[
   { id: "pink", name: "벚꽃 분홍",
@@ -22,6 +22,7 @@ const palettes=[
 ];
 
   const key='garden-appearance',root=document.documentElement;
+  const logoutControl=document.querySelector('#logout-button');
   const media=window.matchMedia?.('(prefers-color-scheme: dark)');
   let state;
   function valid(value){return !!value&&['system','light','dark'].includes(value.theme)&&palettes.some(p=>p.id===value.palette);}
@@ -48,10 +49,11 @@ const palettes=[
   function open(){
     if(typeof authenticated==='undefined'||!authenticated)return;
     const box=document.querySelector('#appearance-dialog');
-    box.innerHTML=`<form method="dialog"><div class="topline"><h2>화면 설정</h2><button class="ghost" value="close" aria-label="화면 설정 닫기">닫기</button></div><fieldset><legend>밝기</legend><div class="appearance-options" role="group" aria-label="밝기 선택">${[['system','기기 설정'],['light','라이트'],['dark','다크']].map(([value,label])=>`<button type="button" class="appearance-theme" data-theme-choice="${value}" aria-pressed="${state.theme===value}">${label}</button>`).join('')}</div></fieldset><fieldset><legend>색상</legend><div class="appearance-swatches">${palettes.map(p=>`<button type="button" data-palette="${p.id}" aria-pressed="${p.id===state.palette}"><i style="background:${p.L.accent}"></i>${p.name}</button>`).join('')}</div></fieldset><p id="samsung-theme-note" class="muted" hidden>삼성 인터넷에서 라이트 화면이 계속 어두우면 브라우저의 웹페이지 다크 모드를 꺼 주세요.</p><p id="appearance-notice" role="status">선택하면 모든 학습 화면에 바로 적용돼요.</p></form>`;
+    box.innerHTML=`<form method="dialog"><div class="topline"><h2>설정</h2><button class="ghost" value="close" aria-label="화면 설정 닫기">닫기</button></div><fieldset><legend>밝기</legend><div class="appearance-options" role="group" aria-label="밝기 선택">${[['system','기기 설정'],['light','라이트'],['dark','다크']].map(([value,label])=>`<button type="button" class="appearance-theme" data-theme-choice="${value}" aria-pressed="${state.theme===value}">${label}</button>`).join('')}</div></fieldset><fieldset><legend>색상</legend><div class="appearance-swatches">${palettes.map(p=>`<button type="button" data-palette="${p.id}" aria-pressed="${p.id===state.palette}"><i style="background:${p.L.accent}"></i>${p.name}</button>`).join('')}</div></fieldset><p id="samsung-theme-note" class="muted" hidden>삼성 인터넷에서 라이트 화면이 계속 어두우면 브라우저의 웹페이지 다크 모드를 꺼 주세요.</p><p id="appearance-notice" role="status">선택하면 모든 학습 화면에 바로 적용돼요.</p></form>`;
     box.querySelectorAll('[data-theme-choice]').forEach(button=>button.onclick=()=>update({theme:button.dataset.themeChoice}));
     box.querySelectorAll('[data-palette]').forEach(button=>button.onclick=()=>update({palette:button.dataset.palette}));
-    syncControls();box.onclose=()=>window.GardenNav?.sync('hub');box.showModal();window.GardenNav?.sync('appearance');
+    if(logoutControl?.nodeType===1)box.appendChild(logoutControl);
+    syncControls();box.onclose=()=>{if(authenticated)window.GardenNav?.sync('hub');};box.showModal();window.GardenNav?.sync('appearance');
   }
   function syncControls(){
     document.querySelectorAll?.('#appearance-dialog [data-theme-choice]')?.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeChoice===state.theme)));

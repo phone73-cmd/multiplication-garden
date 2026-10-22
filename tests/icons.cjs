@@ -31,4 +31,11 @@ const shadow=new Node(11);const button=shadow.appendChild(new Node(1,'button'));
 const stop=api.watch(shadow);assert.equal(button.childNodes[0].tagName,'IMG');assert.equal(button.childNodes[0].alt,'홈');stop();assert(observers[1].stopped);
 const sw=fs.readFileSync(root+'/sw.js','utf8');
 for(const item of api.catalog)assert(sw.includes("'./"+item.src+"'")||sw.includes('"./'+item.src+'"'));
+const installManifest=JSON.parse(fs.readFileSync(root+'/manifest.webmanifest','utf8'));
+for(const [file,size] of [['apple-touch-icon.png',180],['icon-192.png',192],['icon-512.png',512],['icon-maskable-512.png',512]]){
+ const png=fs.readFileSync(root+'/'+file);assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);assert.equal(png[25],2);assert(sw.includes('./'+file));
+}
+assert(installManifest.icons.some(i=>i.purpose==='maskable'&&i.src.includes('icon-maskable-512.png')));
+assert.equal(installManifest.icons.filter(i=>i.purpose==='any').length,2);
+const installHtml=fs.readFileSync(root+'/index.html','utf8');assert(installHtml.includes('apple-touch-icon.png?v=2.0.2'));assert(installHtml.includes('manifest.webmanifest?v=2.0.2'));
 console.log('43 icons: complete asset mapping, variation selectors, unchanged picture count/text, input/option/SVG preservation, image fallback, shadow root cleanup and offline inclusion passed.');

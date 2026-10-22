@@ -1,16 +1,17 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync(__dirname+'/../appearance.js','utf8');
 function fixture(saved,fail=false){
- const storage=new Map(saved?[['garden-appearance',JSON.stringify(saved)]]:[]),tokens={},root={dataset:{},style:{setProperty:(k,v)=>tokens[k]=v}},scheme={setAttribute(k,v){this[k]=v;}},note={hidden:true},notice={},openButton={};
+ const storage=new Map(saved?[['garden-appearance',JSON.stringify(saved)]]:[]),tokens={},root={dataset:{},style:{setProperty:(k,v)=>tokens[k]=v}},scheme={setAttribute(k,v){this[k]=v;}},note={hidden:true},notice={},openButton={},logout={nodeType:1,onclick(){}};
  const media={matches:true,addEventListener(name,fn){this.change=fn;}};
  const button=(value,key,pressed)=>({dataset:{[key]:value},attrs:{'aria-pressed':pressed},setAttribute(k,v){this.attrs[k]=v;}});
- const box={themes:[],palettes:[],set innerHTML(s){this.markup=s;this.themes=[...s.matchAll(/data-theme-choice="([^"]+)" aria-pressed="([^"]+)"/g)].map(m=>button(m[1],'themeChoice',m[2]));this.palettes=[...s.matchAll(/data-palette="([^"]+)" aria-pressed="([^"]+)"/g)].map(m=>button(m[1],'palette',m[2]));},querySelectorAll(s){return s.includes('data-theme-choice')?this.themes:this.palettes;},showModal(){this.open=true;}};
- const body={style:{}};const doc={body,documentElement:root,querySelector:s=>s==='#appearance-dialog'?box:s==='#appearance-button'?openButton:s==='#samsung-theme-note'?note:s==='#appearance-notice'?notice:s==='meta[name="color-scheme"]'?scheme:{setAttribute(){}},querySelectorAll:s=>box.querySelectorAll(s)};
+ const box={themes:[],palettes:[],children:[],appendChild(node){this.children=[node];},set innerHTML(s){this.markup=s;this.themes=[...s.matchAll(/data-theme-choice="([^"]+)" aria-pressed="([^"]+)"/g)].map(m=>button(m[1],'themeChoice',m[2]));this.palettes=[...s.matchAll(/data-palette="([^"]+)" aria-pressed="([^"]+)"/g)].map(m=>button(m[1],'palette',m[2]));},querySelectorAll(s){return s.includes('data-theme-choice')?this.themes:this.palettes;},showModal(){this.open=true;}};
+ const body={style:{}};const doc={body,documentElement:root,querySelector:s=>s==='#appearance-dialog'?box:s==='#appearance-button'?openButton:s==='#logout-button'?logout:s==='#samsung-theme-note'?note:s==='#appearance-notice'?notice:s==='meta[name="color-scheme"]'?scheme:{setAttribute(){}},querySelectorAll:s=>box.querySelectorAll(s)};
  const ctx=vm.createContext({window:{matchMedia:()=>media},document:doc,navigator:{userAgent:'SamsungBrowser/29.0'},localStorage:{getItem:k=>storage.get(k)??null,setItem(k,v){if(fail)throw Error('quota');storage.set(k,v);}}});
  vm.runInContext('let authenticated=true;'+source,ctx);openButton.onclick();
- return {api:ctx.window.GardenAppearance,box,storage,media,root,body,tokens,note,scheme,notice};
+ return {api:ctx.window.GardenAppearance,box,storage,media,root,body,tokens,note,scheme,notice,logout};
 }
 const f=fixture();
+assert.equal(f.box.children[0],f.logout);const originalLogout=f.logout.onclick;f.api.open();assert.equal(f.box.children[0],f.logout);assert.equal(f.logout.onclick,originalLogout);
 const choose=t=>f.box.themes.find(b=>b.dataset.themeChoice===t).onclick();
 const selected=()=>f.box.themes.filter(b=>b.attrs['aria-pressed']==='true').map(b=>b.dataset.themeChoice);
 assert.equal(f.box.themes.length,3);assert(!f.box.markup.includes('type="radio"'));assert.deepEqual(selected(),['system']);

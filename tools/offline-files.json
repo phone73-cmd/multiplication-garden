@@ -17,7 +17,6 @@
   "./dictation/dictation.js",
   "./icon-192.png",
   "./icon-512.png",
-  "./icon.svg",
   "./apple-touch-icon.png",
   "./assets/icons/rainbow.webp",
   "./assets/icons/sunflower.webp",
@@ -118,10 +117,7 @@
   "./assets/fonts/fonts.css",
   "./assets/fonts/gowun-dodum.woff",
   "./assets/fonts/jua.woff",
-  "./assets/status/badge-ready.webp",
-  "./assets/status/badge-unavailable.webp",
-  "./assets/status/device-base.webp",
-  "./assets/status/network-base.webp",
-  "./assets/status/network-slash.webp",
-  "./assets/status/offline-guide.webp"
+  "./assets/status/offline-guide.webp",
+  "./assets/ui/settings-flower.webp",
+  "./icon-maskable-512.png"
 ]
